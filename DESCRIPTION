@@ -1,0 +1,32 @@
+Package: databoxR
+Type: Package
+Title: A Smart Explorer for SDTM and ADaM Clinical Trial Datasets
+Version: 0.0.0.9000
+Author: Pawan Rama Mali
+Maintainer: Pawan Rama Mali <prm@outlook.in>
+Description: A Shiny-powered R package that provides a Windows Explorer-style interface 
+    for browsing, previewing, and exploring SDTM/ADaM datasets with smart metadata hints. 
+    Supports define.xml, CRFs, quick EDA, variable summaries, and CDISC-specific tooling.
+License: MIT
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 4.1.0)
+Imports:
+    shiny,
+    bs4Dash,
+    reactable,
+    haven,
+    labelled,
+    readr,
+    xml2,
+    shinyWidgets,
+    data.table,
+    skimr,
+    dplyr,
+    tidyr,
+    stringr
+Suggests:
+    testthat,
+    rmarkdown,
+    DataExplorer
+RoxygenNote: 7.2.3
