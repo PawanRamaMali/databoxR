@@ -4,9 +4,11 @@
 \alias{run_databox}
 \title{Run the databoxR Shiny Application}
 \usage{
-run_databox(...)
+run_databox(demo_data = FALSE, ...)
 }
 \arguments{
+\item{demo_data}{Logical, if TRUE loads sample datasets automatically. Default is FALSE.}
+
 \item{...}{arguments to pass to shinyApp}
 }
 \value{
@@ -18,5 +20,6 @@ This function launches the main databoxR application for exploring SDTM/ADaM dat
 \examples{
 \dontrun{
   run_databox()
+  run_databox(demo_data = TRUE)  # Load with sample data
 }
 }

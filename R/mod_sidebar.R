@@ -35,7 +35,7 @@ mod_sidebar_ui <- function(id) {
   )
 }
 
-mod_sidebar_server <- function(id) {
+mod_sidebar_server <- function(id, demo_data = FALSE) {
   moduleServer(id, function(input, output, session) {
     
     # Reactive values for file management
@@ -44,6 +44,22 @@ mod_sidebar_server <- function(id) {
       names = NULL,
       selected_file = NULL
     )
+    
+    # Load demo data if requested
+    if (demo_data) {
+      observe({
+        demo_files <- list.files(system.file("extdata", package = "databoxR"), 
+                                pattern = "*.csv", full.names = TRUE)
+        demo_names <- basename(demo_files)
+        
+        if (length(demo_files) > 0) {
+          files_data$paths <- demo_files
+          files_data$names <- demo_names
+          
+          showNotification("Demo data loaded automatically!", type = "message")
+        }
+      })
+    }
     
     # Handle file uploads
     observeEvent(input$folder, {
