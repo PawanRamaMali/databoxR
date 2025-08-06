@@ -1,7 +1,7 @@
 Package: databoxR
 Type: Package
 Title: A Smart Explorer for SDTM and ADaM Clinical Trial Datasets
-Version: 0.0.0.9000
+Version: 0.1.0
 Author: Pawan Rama Mali
 Maintainer: Pawan Rama Mali <prm@outlook.in>
 Description: A Shiny-powered R package that provides a Windows Explorer-style interface 
@@ -25,7 +25,8 @@ Imports:
     dplyr,
     tidyr,
     stringr,
-    DT
+    DT,
+    shinycssloaders
 Suggests:
     testthat,
     rmarkdown,

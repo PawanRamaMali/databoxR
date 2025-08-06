@@ -1,67 +1,62 @@
 mod_eda_ui <- function(id) {
   ns <- NS(id)
-  fluidRow(
-    bs4Dash::box(
-      title = "Exploratory Data Analysis",
-      status = "success",
-      solidHeader = TRUE, 
-      width = 12,
-      collapsible = TRUE,
-      tabsetPanel(
-        id = ns("eda_tabs"),
-        tabPanel(
-          title = "Overview",
-          value = "overview",
-          br(),
-          fluidRow(
-            column(6,
-              bs4Dash::valueBoxOutput(ns("total_rows"), width = 12),
-              bs4Dash::valueBoxOutput(ns("total_cols"), width = 12)
-            ),
-            column(6,
-              bs4Dash::valueBoxOutput(ns("missing_data"), width = 12),
-              bs4Dash::valueBoxOutput(ns("numeric_vars"), width = 12)
-            )
-          ),
-          br(),
-          h5("Data Quality Summary"),
+  bs4Dash::box(
+    title = "Exploratory Data Analysis",
+    status = "success",
+    solidHeader = TRUE, 
+    width = 12,
+    collapsible = TRUE,
+    tabsetPanel(
+      id = ns("eda_tabs"),
+      type = "pills",
+      tabPanel(
+        title = "Overview",
+        value = "overview",
+        br(),
+        fluidRow(
+          column(6, bs4Dash::valueBoxOutput(ns("total_rows"), width = 12)),
+          column(6, bs4Dash::valueBoxOutput(ns("missing_data"), width = 12))
+        ),
+        br(),
+        h6("Data Quality Assessment", class = "text-muted"),
+        div(style = "background-color: #f8f9fa; padding: 15px; border-radius: 0.375rem; height: 250px; overflow-y: auto;",
           verbatimTextOutput(ns("data_quality"))
-        ),
-        tabPanel(
-          title = "Distributions",
-          value = "distributions", 
-          br(),
-          fluidRow(
-            column(4, selectInput(ns("dist_variable"), "Select Variable:", choices = NULL)),
-            column(4, selectInput(ns("plot_type"), "Plot Type:", 
-                                choices = c("Histogram" = "hist", "Boxplot" = "box", "Density" = "density"))),
-            column(4, checkboxInput(ns("log_scale"), "Log Scale", value = FALSE))
+        )
+      ),
+      tabPanel(
+        title = "Distributions",
+        value = "distributions", 
+        br(),
+        fluidRow(
+          column(6,
+            selectInput(ns("dist_variable"), "Select Variable:", choices = NULL, width = "100%")
           ),
-          plotOutput(ns("distribution_plot"), height = "400px")
+          column(6,
+            selectInput(ns("plot_type"), "Plot Type:", 
+                       choices = c("Histogram" = "hist", "Boxplot" = "box"), width = "100%")
+          )
         ),
-        tabPanel(
-          title = "Correlations",
-          value = "correlations",
-          br(),
-          fluidRow(
-            column(6, 
-              h5("Correlation Matrix"),
-              plotOutput(ns("correlation_plot"))
-            ),
-            column(6,
-              h5("Top Correlations"),
-              DT::dataTableOutput(ns("correlation_table"))
+        hr(),
+        h6("Variable Distribution", class = "text-muted"),
+        div(style = "border: 1px solid #dee2e6; border-radius: 0.375rem;",
+          plotOutput(ns("distribution_plot"), height = "300px")
+        )
+      ),
+      tabPanel(
+        title = "Missing Data",
+        value = "missing",
+        br(),
+        fluidRow(
+          column(12,
+            h6("Missing Data Pattern", class = "text-muted"),
+            div(style = "border: 1px solid #dee2e6; border-radius: 0.375rem; margin-bottom: 15px;",
+              plotOutput(ns("missing_pattern"), height = "200px")
             )
           )
         ),
-        tabPanel(
-          title = "Missing Data",
-          value = "missing",
-          br(),
-          fluidRow(
-            column(6, plotOutput(ns("missing_pattern"))),
-            column(6, DT::dataTableOutput(ns("missing_summary")))
-          )
+        h6("Missing Data Summary", class = "text-muted"),
+        div(style = "height: 200px; overflow: auto; border: 1px solid #dee2e6; border-radius: 0.375rem;",
+          DT::dataTableOutput(ns("missing_summary"))
         )
       )
     )
@@ -152,34 +147,60 @@ mod_eda_server <- function(id, dataset) {
     observe({
       req(dataset())
       numeric_vars <- names(dataset())[sapply(dataset(), is.numeric)]
-      updateSelectInput(session, "dist_variable", choices = numeric_vars)
+      
+      if (length(numeric_vars) == 0) {
+        updateSelectInput(session, "dist_variable", 
+                         choices = list("No numeric variables found" = ""))
+        showNotification("No numeric variables found for distribution analysis", 
+                        type = "warning", duration = 5)
+      } else {
+        updateSelectInput(session, "dist_variable", choices = numeric_vars)
+      }
     })
     
     # Distribution plots
     output$distribution_plot <- renderPlot({
       req(input$dist_variable, dataset())
       
+      # Validate variable selection
+      if (input$dist_variable == "" || input$dist_variable == "No numeric variables found") {
+        plot.new()
+        text(0.5, 0.5, "No numeric variables available", cex = 1.2, col = "gray")
+        return()
+      }
+      
       var_data <- dataset()[[input$dist_variable]]
       var_data <- var_data[!is.na(var_data)]
       
-      if (input$log_scale && min(var_data) > 0) {
-        var_data <- log10(var_data)
-        x_label <- paste("log10(", input$dist_variable, ")")
-      } else {
-        x_label <- input$dist_variable
+      # Check if there's enough data
+      if (length(var_data) < 2) {
+        plot.new()
+        text(0.5, 0.5, "Insufficient data for plotting", cex = 1.2, col = "gray")
+        return()
       }
       
-      if (input$plot_type == "hist") {
-        hist(var_data, main = paste("Distribution of", input$dist_variable),
-             xlab = x_label, col = "lightblue", border = "white", breaks = 30)
-      } else if (input$plot_type == "box") {
-        boxplot(var_data, main = paste("Boxplot of", input$dist_variable),
-                ylab = x_label, col = "lightgreen")
-      } else if (input$plot_type == "density") {
-        plot(density(var_data), main = paste("Density of", input$dist_variable),
-             xlab = x_label, col = "darkblue", lwd = 2)
-        polygon(density(var_data), col = "lightblue", border = "darkblue")
+      # Check for constant values
+      if (length(unique(var_data)) == 1) {
+        plot.new()
+        text(0.5, 0.5, paste("Constant value:", unique(var_data)[1]), cex = 1.2, col = "gray")
+        return()
       }
+      
+      x_label <- input$dist_variable
+      
+      tryCatch({
+        if (input$plot_type == "hist") {
+          hist(var_data, main = paste("Distribution of", input$dist_variable),
+               xlab = x_label, col = "lightblue", border = "white", 
+               breaks = min(30, length(unique(var_data))))
+        } else if (input$plot_type == "box") {
+          boxplot(var_data, main = paste("Boxplot of", input$dist_variable),
+                  ylab = x_label, col = "lightgreen")
+        }
+      }, error = function(e) {
+        plot.new()
+        text(0.5, 0.5, paste("Error creating plot:", e$message), cex = 1, col = "red")
+      })
     })
     
     # Correlation analysis

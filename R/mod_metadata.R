@@ -1,37 +1,60 @@
 mod_metadata_ui <- function(id) {
   ns <- NS(id)
-  fluidRow(
-    bs4Dash::box(
-      title = "Metadata Explorer",
-      status = "info", 
-      solidHeader = TRUE,
-      width = 12,
-      collapsible = TRUE,
-      tabsetPanel(
-        id = ns("metadata_tabs"),
-        tabPanel(
-          title = "Variable Labels",
-          value = "labels",
-          br(),
+  bs4Dash::box(
+    title = "Metadata Explorer",
+    status = "info", 
+    solidHeader = TRUE,
+    width = 12,
+    collapsible = TRUE,
+    tabsetPanel(
+      id = ns("metadata_tabs"),
+      type = "pills",
+      tabPanel(
+        title = "Variables",
+        value = "labels",
+        br(),
+        h6("Variable Information", class = "text-muted"),
+        div(style = "height: 400px; overflow: auto; border: 1px solid #dee2e6; border-radius: 0.375rem;",
           DT::dataTableOutput(ns("variable_labels"))
-        ),
-        tabPanel(
-          title = "Data Dictionary", 
-          value = "dictionary",
-          br(),
-          fluidRow(
-            column(6, selectInput(ns("dict_variable"), "Select Variable:", choices = NULL)),
-            column(6, selectInput(ns("dict_type"), "Analysis Type:", 
-                                choices = c("Summary" = "summary", "Frequency" = "frequency")))
+        )
+      ),
+      tabPanel(
+        title = "Dictionary", 
+        value = "dictionary",
+        br(),
+        fluidRow(
+          column(6,
+            selectInput(ns("dict_variable"), "Select Variable:", 
+                       choices = NULL, width = "100%")
           ),
-          verbatimTextOutput(ns("variable_analysis")),
-          plotOutput(ns("variable_plot"))
+          column(6,
+            selectInput(ns("dict_type"), "Analysis Type:", 
+                       choices = c("Summary" = "summary", "Frequency" = "frequency"),
+                       width = "100%")
+          )
         ),
-        tabPanel(
-          title = "CDISC Compliance",
-          value = "cdisc",
-          br(),
-          h5("CDISC Standard Checks"),
+        hr(),
+        fluidRow(
+          column(6,
+            h6("Analysis Results", class = "text-muted"),
+            div(style = "background-color: #f8f9fa; padding: 15px; border-radius: 0.375rem; height: 200px; overflow-y: auto;",
+              verbatimTextOutput(ns("variable_analysis"))
+            )
+          ),
+          column(6,
+            h6("Visual Distribution", class = "text-muted"),
+            div(style = "border: 1px solid #dee2e6; border-radius: 0.375rem;",
+              plotOutput(ns("variable_plot"), height = "200px")
+            )
+          )
+        )
+      ),
+      tabPanel(
+        title = "CDISC Checks",
+        value = "cdisc",
+        br(),
+        h6("Compliance Validation", class = "text-muted"),
+        div(style = "height: 400px; overflow: auto; border: 1px solid #dee2e6; border-radius: 0.375rem;",
           DT::dataTableOutput(ns("cdisc_checks"))
         )
       )
@@ -58,7 +81,14 @@ mod_metadata_server <- function(id, dataset) {
         Type = sapply(dataset(), class),
         stringsAsFactors = FALSE
       )
-    }, options = list(pageLength = 20, scrollX = TRUE))
+    }, options = list(
+      pageLength = 10,
+      scrollX = TRUE,
+      scrollY = "300px",
+      dom = 'frtip',
+      autoWidth = TRUE,
+      columnDefs = list(list(width = "200px", targets = "_all"))
+    ))
     
     # Update variable choices for dictionary
     observe({
@@ -102,18 +132,46 @@ mod_metadata_server <- function(id, dataset) {
       req(input$dict_variable, dataset())
       var_data <- dataset()[[input$dict_variable]]
       
-      if (is.numeric(var_data)) {
-        hist(var_data, main = paste("Distribution of", input$dict_variable),
-             xlab = input$dict_variable, col = "lightblue", border = "white")
-      } else {
-        # For categorical variables
-        freq_table <- table(var_data)
-        if (length(freq_table) <= 20) {  # Only plot if not too many categories
-          barplot(freq_table, main = paste("Frequency of", input$dict_variable),
-                  xlab = input$dict_variable, ylab = "Count", 
-                  col = "lightgreen", las = 2)
-        }
+      # Remove NA values for plotting
+      var_data_clean <- var_data[!is.na(var_data)]
+      
+      # Check if there's any data to plot
+      if (length(var_data_clean) == 0) {
+        plot.new()
+        text(0.5, 0.5, "No non-missing data available for plotting", cex = 1.2, col = "gray")
+        return()
       }
+      
+      # Check if all values are the same
+      if (length(unique(var_data_clean)) == 1) {
+        plot.new()
+        text(0.5, 0.5, paste("Constant value:", unique(var_data_clean)[1]), cex = 1.2, col = "gray")
+        return()
+      }
+      
+      tryCatch({
+        if (is.numeric(var_data)) {
+          hist(var_data_clean, main = paste("Distribution of", input$dict_variable),
+               xlab = input$dict_variable, col = "lightblue", border = "white",
+               breaks = min(20, length(unique(var_data_clean))))
+        } else {
+          # For categorical variables
+          freq_table <- table(var_data_clean)
+          if (length(freq_table) <= 15) {  # Only plot if not too many categories
+            par(mar = c(8, 4, 4, 2))  # Increase bottom margin for labels
+            barplot(freq_table, main = paste("Frequency of", input$dict_variable),
+                    xlab = "", ylab = "Count", 
+                    col = "lightgreen", las = 2, cex.names = 0.8)
+          } else {
+            plot.new()
+            text(0.5, 0.5, paste("Too many categories (", length(freq_table), ") to display"), 
+                 cex = 1.1, col = "gray")
+          }
+        }
+      }, error = function(e) {
+        plot.new()
+        text(0.5, 0.5, paste("Error creating plot:", e$message), cex = 1, col = "red")
+      })
     })
     
     # CDISC compliance checks
@@ -163,6 +221,12 @@ mod_metadata_server <- function(id, dataset) {
       } else {
         do.call(rbind, checks)
       }
-    }, options = list(pageLength = 10))
+    }, options = list(
+      pageLength = 8,
+      scrollX = TRUE,
+      scrollY = "300px",
+      dom = 'frtip',
+      autoWidth = TRUE
+    ))
   })
 }

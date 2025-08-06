@@ -13,14 +13,71 @@
 #' }
 run_databox <- function(demo_data = FALSE, ...) {
   ui <- bs4Dash::dashboardPage(
-    header = bs4Dash::dashboardHeader(title = "databoxR"),
+    title = "databoxR - SDTM/ADaM Explorer",
+    header = bs4Dash::dashboardHeader(
+      title = bs4Dash::dashboardBrand(
+        title = "databoxR",
+        color = "primary",
+        href = "#",
+        image = NULL
+      )
+    ),
     sidebar = bs4Dash::dashboardSidebar(
+      skin = "light",
+      status = "primary",
+      elevation = 3,
       mod_sidebar_ui("sidebar")
     ),
     body = bs4Dash::dashboardBody(
-      mod_preview_ui("preview"),
-      mod_metadata_ui("metadata"),
-      mod_eda_ui("eda")
+      bs4Dash::tabItems(
+        bs4Dash::tabItem(
+          tabName = "upload",
+          h3("File Upload & Management", class = "text-primary"),
+          p("Upload your SDTM/ADaM datasets or use the demo data to get started."),
+          br(),
+          fluidRow(
+            bs4Dash::box(
+              title = "Getting Started", 
+              status = "info", 
+              solidHeader = TRUE,
+              width = 12,
+              "Welcome to databoxR! Upload your files using the sidebar or enable demo mode to explore sample datasets.",
+              br(), br(),
+              if (demo_data) {
+                div(
+                  class = "alert alert-success",
+                  role = "alert",
+                  style = "margin: 10px 0;",
+                  icon("check-circle"), " Demo data has been loaded automatically! Select a file from the sidebar to begin exploring."
+                )
+              } else {
+                div(
+                  class = "alert alert-info", 
+                  role = "alert",
+                  style = "margin: 10px 0;",
+                  icon("info-circle"), " Use the file upload widget in the sidebar to get started with your own data."
+                )
+              }
+            )
+          )
+        ),
+        bs4Dash::tabItem(
+          tabName = "explorer",
+          mod_preview_ui("preview")
+        ),
+        bs4Dash::tabItem(
+          tabName = "analysis",
+          fluidRow(
+            column(6, mod_metadata_ui("metadata")),
+            column(6, mod_eda_ui("eda"))
+          )
+        )
+      )
+    ),
+    controlbar = NULL,
+    footer = bs4Dash::dashboardFooter(
+      left = "databoxR v0.1.0",
+      right = "Clinical Data Explorer"
     )
   )
   
@@ -34,6 +91,29 @@ run_databox <- function(demo_data = FALSE, ...) {
     # Pass dataset to other modules
     mod_metadata_server("metadata", dataset)
     mod_eda_server("eda", dataset)
+    
+    # Auto-navigate to explorer when data is loaded
+    observeEvent(dataset(), {
+      if (!is.null(dataset())) {
+        bs4Dash::updateTabItems(session, "sidebar", "explorer")
+        showNotification("Dataset loaded successfully! Navigate to other tabs to explore.", 
+                        type = "default", duration = 3)
+      }
+    })
+    
+    # Show welcome message for demo mode
+    if (demo_data) {
+      showModal(modalDialog(
+        title = "Welcome to databoxR Demo!",
+        "Sample CDISC datasets have been loaded. Explore the different tabs to see the features:",
+        tags$ul(
+          tags$li("Dataset Explorer: Interactive data preview"),
+          tags$li("Analysis: Metadata exploration and EDA")
+        ),
+        footer = modalButton("Let's Explore!"),
+        easyClose = TRUE
+      ))
+    }
   }
   
   shiny::shinyApp(ui = ui, server = server, ...)

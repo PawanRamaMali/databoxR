@@ -56,7 +56,7 @@ mod_sidebar_server <- function(id, demo_data = FALSE) {
           files_data$paths <- demo_files
           files_data$names <- demo_names
           
-          showNotification("Demo data loaded automatically!", type = "message")
+          showNotification("Demo data loaded automatically!", type = "default")
         }
       })
     }
