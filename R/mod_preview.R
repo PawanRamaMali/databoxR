@@ -44,7 +44,7 @@ mod_preview_ui <- function(id) {
   )
 }
 
-mod_preview_server <- function(id, filepath) {
+mod_preview_server <- function(id, filepath, demo_datasets = NULL) {
   moduleServer(id, function(input, output, session) {
     
     # Load dataset when filepath changes
@@ -55,11 +55,43 @@ mod_preview_server <- function(id, filepath) {
       show_id <- showNotification("Loading dataset...", duration = NULL, type = "default")
       
       result <- tryCatch({
-        data <- read_sdtm_adam(filepath())
-        removeNotification(show_id)
-        showNotification(paste("Successfully loaded", nrow(data), "rows and", ncol(data), "columns"), 
-                        type = "default", duration = 3)
-        data
+        # Check if this is demo data
+        if (startsWith(filepath(), "DEMO:")) {
+          domain <- sub("DEMO:", "", filepath())
+          # Get demo datasets (could be reactive or static)
+          datasets <- if (is.reactive(demo_datasets)) demo_datasets() else demo_datasets
+          if (!is.null(datasets) && domain %in% names(datasets)) {
+            data <- datasets[[domain]]
+            
+            # Ensure proper data types for demo data
+            if ("AGE" %in% names(data)) {
+              data$AGE <- as.numeric(data$AGE)
+            }
+            if ("VSSTRESN" %in% names(data)) {
+              data$VSSTRESN <- as.numeric(data$VSSTRESN)
+            }
+            if ("AESEQ" %in% names(data)) {
+              data$AESEQ <- as.numeric(data$AESEQ)
+            }
+            if ("VSSEQ" %in% names(data)) {
+              data$VSSEQ <- as.numeric(data$VSSEQ)
+            }
+            
+            removeNotification(show_id)
+            showNotification(paste("Demo data loaded:", nrow(data), "rows and", ncol(data), "columns"), 
+                            type = "default", duration = 3)
+            return(data)
+          } else {
+            stop("Demo dataset not found: ", domain)
+          }
+        } else {
+          # Regular file reading
+          data <- read_sdtm_adam(filepath(), validate_data = FALSE)
+          removeNotification(show_id)
+          showNotification(paste("Successfully loaded", nrow(data), "rows and", ncol(data), "columns"), 
+                          type = "default", duration = 3)
+          return(data)
+        }
       }, error = function(e) {
         removeNotification(show_id)
         showNotification(paste("Error loading file:", e$message), type = "error", duration = 10)
@@ -158,6 +190,6 @@ mod_preview_server <- function(id, filepath) {
     outputOptions(output, "dataset_loaded", suspendWhenHidden = FALSE)
     
     # Return dataset for other modules
-    dataset
+    return(dataset)
   })
 }

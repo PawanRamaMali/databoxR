@@ -1,61 +1,148 @@
 mod_metadata_ui <- function(id) {
   ns <- NS(id)
   bs4Dash::box(
-    title = "Metadata Explorer",
-    status = "info", 
+    title = tags$div(
+      icon("search", class = "fa-fw"),
+      "Metadata Explorer",
+      style = "color: #007bff;"
+    ),
+    status = "primary", 
     solidHeader = TRUE,
     width = 12,
     collapsible = TRUE,
+    headerBorder = FALSE,
     tabsetPanel(
       id = ns("metadata_tabs"),
       type = "pills",
       tabPanel(
-        title = "Variables",
+        title = tags$span(
+          style = "display: flex; align-items: center; gap: 10px; padding: 8px 16px; margin-right: 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 1px solid #dee2e6; font-weight: 500;",
+          icon("table", class = "fa-sm"),
+          "Variables"
+        ),
         value = "labels",
         br(),
-        h6("Variable Information", class = "text-muted"),
-        div(style = "height: 400px; overflow: auto; border: 1px solid #dee2e6; border-radius: 0.375rem;",
-          DT::dataTableOutput(ns("variable_labels"))
+        div(class = "card border-0 shadow-sm",
+          div(class = "card-header bg-gradient-primary text-white",
+            h5(class = "card-title mb-0",
+              icon("list-ul", class = "fa-fw me-2"),
+              "Variable Dictionary"
+            )
+          ),
+          div(class = "card-body p-0",
+            div(style = "height: 450px; overflow: auto;",
+              shinycssloaders::withSpinner(
+                DT::dataTableOutput(ns("variable_labels")),
+                type = 6, color = "#007bff"
+              )
+            )
+          )
         )
       ),
       tabPanel(
-        title = "Dictionary", 
+        title = tags$span(
+          style = "display: flex; align-items: center; gap: 10px; padding: 8px 16px; margin-right: 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 1px solid #dee2e6; font-weight: 500;",
+          icon("chart-bar", class = "fa-sm"),
+          "Analysis"
+        ),
         value = "dictionary",
         br(),
-        fluidRow(
-          column(6,
-            selectInput(ns("dict_variable"), "Select Variable:", 
-                       choices = NULL, width = "100%")
-          ),
-          column(6,
-            selectInput(ns("dict_type"), "Analysis Type:", 
-                       choices = c("Summary" = "summary", "Frequency" = "frequency"),
-                       width = "100%")
-          )
-        ),
-        hr(),
-        fluidRow(
-          column(6,
-            h6("Analysis Results", class = "text-muted"),
-            div(style = "background-color: #f8f9fa; padding: 15px; border-radius: 0.375rem; height: 200px; overflow-y: auto;",
-              verbatimTextOutput(ns("variable_analysis"))
+        div(class = "row g-3 mb-4",
+          div(class = "col-md-6",
+            div(class = "card border-0 shadow-sm h-100",
+              div(class = "card-body",
+                h6(class = "card-title text-primary",
+                  icon("filter", class = "fa-fw me-2"),
+                  "Variable Selection"
+                ),
+                selectInput(ns("dict_variable"), 
+                           label = NULL,
+                           choices = NULL, 
+                           width = "100%")
+              )
             )
           ),
-          column(6,
-            h6("Visual Distribution", class = "text-muted"),
-            div(style = "border: 1px solid #dee2e6; border-radius: 0.375rem;",
-              plotOutput(ns("variable_plot"), height = "200px")
+          div(class = "col-md-6",
+            div(class = "card border-0 shadow-sm h-100",
+              div(class = "card-body",
+                h6(class = "card-title text-primary",
+                  icon("cogs", class = "fa-fw me-2"),
+                  "Analysis Type"
+                ),
+                selectInput(ns("dict_type"), 
+                           label = NULL,
+                           choices = c(
+                             "📊 Summary Statistics" = "summary", 
+                             "📈 Frequency Analysis" = "frequency",
+                             "🔍 Missing Data Profile" = "missing"
+                           ),
+                           width = "100%")
+              )
+            )
+          )
+        ),
+        div(class = "row g-3",
+          div(class = "col-lg-6",
+            div(class = "card border-0 shadow-sm h-100",
+              div(class = "card-header bg-gradient-success text-white",
+                h6(class = "card-title mb-0",
+                  icon("calculator", class = "fa-fw me-2"),
+                  "Statistical Summary"
+                )
+              ),
+              div(class = "card-body",
+                div(style = "height: 280px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.9em;",
+                  shinycssloaders::withSpinner(
+                    verbatimTextOutput(ns("variable_analysis")),
+                    type = 4, color = "#28a745"
+                  )
+                )
+              )
+            )
+          ),
+          div(class = "col-lg-6",
+            div(class = "card border-0 shadow-sm h-100",
+              div(class = "card-header bg-gradient-info text-white",
+                h6(class = "card-title mb-0",
+                  icon("chart-area", class = "fa-fw me-2"),
+                  "Data Visualization"
+                )
+              ),
+              div(class = "card-body d-flex align-items-center justify-content-center",
+                shinycssloaders::withSpinner(
+                  plotlyOutput(ns("variable_plot"), height = "280px"),
+                  type = 5, color = "#17a2b8"
+                )
+              )
             )
           )
         )
       ),
       tabPanel(
-        title = "CDISC Checks",
+        title = tags$span(
+          style = "display: flex; align-items: center; gap: 10px; padding: 8px 16px; margin-right: 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 1px solid #dee2e6; font-weight: 500;",
+          icon("check-circle", class = "fa-sm"),
+          "CDISC"
+        ),
         value = "cdisc",
         br(),
-        h6("Compliance Validation", class = "text-muted"),
-        div(style = "height: 400px; overflow: auto; border: 1px solid #dee2e6; border-radius: 0.375rem;",
-          DT::dataTableOutput(ns("cdisc_checks"))
+        div(class = "card border-0 shadow-sm",
+          div(class = "card-header bg-gradient-warning text-dark",
+            h5(class = "card-title mb-0",
+              icon("shield-alt", class = "fa-fw me-2"),
+              "CDISC Compliance Validation"
+            ),
+            p(class = "card-text small mb-0 mt-2", 
+              "Automated checks for CDISC standards compliance and data quality")
+          ),
+          div(class = "card-body p-0",
+            div(style = "height: 450px; overflow: auto;",
+              shinycssloaders::withSpinner(
+                DT::dataTableOutput(ns("cdisc_checks")),
+                type = 7, color = "#ffc107"
+              )
+            )
+          )
         )
       )
     )
@@ -127,50 +214,134 @@ mod_metadata_server <- function(id, dataset) {
       }
     })
     
-    # Variable plot
-    output$variable_plot <- renderPlot({
-      req(input$dict_variable, dataset())
+    # Variable plot with plotly (no margin issues)
+    output$variable_plot <- renderPlotly({
+      # Check if we have the required inputs
+      if (is.null(input$dict_variable) || input$dict_variable == "" || is.null(dataset())) {
+        return(plot_ly() %>%
+          layout(
+            title = "Please select a variable to visualize",
+            xaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE),
+            yaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE)
+          ))
+      }
+      
+      # Check if variable exists in dataset
+      if (!input$dict_variable %in% names(dataset())) {
+        return(plot_ly() %>%
+          layout(
+            title = paste("Variable", input$dict_variable, "not found"),
+            xaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE),
+            yaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE)
+          ))
+      }
+      
       var_data <- dataset()[[input$dict_variable]]
+      
+      # Check if variable has any data
+      if (is.null(var_data) || length(var_data) == 0) {
+        return(plot_ly() %>%
+          layout(
+            title = "No data available for selected variable",
+            xaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE),
+            yaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE)
+          ))
+      }
       
       # Remove NA values for plotting
       var_data_clean <- var_data[!is.na(var_data)]
       
-      # Check if there's any data to plot
+      # Check if there's any data to plot after removing NAs
       if (length(var_data_clean) == 0) {
-        plot.new()
-        text(0.5, 0.5, "No non-missing data available for plotting", cex = 1.2, col = "gray")
-        return()
+        return(plot_ly() %>%
+          layout(
+            title = "All values are missing for this variable",
+            xaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE),
+            yaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE)
+          ))
       }
       
       # Check if all values are the same
       if (length(unique(var_data_clean)) == 1) {
-        plot.new()
-        text(0.5, 0.5, paste("Constant value:", unique(var_data_clean)[1]), cex = 1.2, col = "gray")
-        return()
+        return(plot_ly() %>%
+          layout(
+            title = paste("Constant value:", unique(var_data_clean)[1]),
+            xaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE),
+            yaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE)
+          ))
       }
       
+      # Create the plot
       tryCatch({
-        if (is.numeric(var_data)) {
-          hist(var_data_clean, main = paste("Distribution of", input$dict_variable),
-               xlab = input$dict_variable, col = "lightblue", border = "white",
-               breaks = min(20, length(unique(var_data_clean))))
+        if (is.numeric(var_data_clean)) {
+          # Numeric variable - histogram
+          mean_val <- mean(var_data_clean)
+          median_val <- median(var_data_clean)
+          
+          plot_ly(x = ~var_data_clean, type = "histogram", 
+                  marker = list(color = "lightblue", line = list(color = "white", width = 1))) %>%
+            layout(
+              title = paste("Distribution of", input$dict_variable),
+              xaxis = list(title = input$dict_variable),
+              yaxis = list(title = "Frequency"),
+              shapes = list(
+                list(type = "line", x0 = mean_val, x1 = mean_val, 
+                     y0 = 0, y1 = 1, yref = "paper",
+                     line = list(color = "red", width = 2, dash = "dash")),
+                list(type = "line", x0 = median_val, x1 = median_val,
+                     y0 = 0, y1 = 1, yref = "paper", 
+                     line = list(color = "blue", width = 2, dash = "dash"))
+              ),
+              annotations = list(
+                list(x = mean_val, y = 1, yref = "paper", text = paste("Mean:", round(mean_val, 2)),
+                     showarrow = TRUE, arrowcolor = "red", arrowsize = 0.5),
+                list(x = median_val, y = 0.9, yref = "paper", text = paste("Median:", round(median_val, 2)),
+                     showarrow = TRUE, arrowcolor = "blue", arrowsize = 0.5)
+              )
+            )
+                 
         } else {
-          # For categorical variables
+          # Categorical variable - bar plot
           freq_table <- table(var_data_clean)
-          if (length(freq_table) <= 15) {  # Only plot if not too many categories
-            par(mar = c(8, 4, 4, 2))  # Increase bottom margin for labels
-            barplot(freq_table, main = paste("Frequency of", input$dict_variable),
-                    xlab = "", ylab = "Count", 
-                    col = "lightgreen", las = 2, cex.names = 0.8)
+          n_categories <- length(freq_table)
+          
+          if (n_categories <= 20) {
+            df <- data.frame(
+              categories = names(freq_table),
+              counts = as.numeric(freq_table)
+            )
+            
+            plot_ly(df, x = ~categories, y = ~counts, type = "bar",
+                    marker = list(color = "lightgreen", line = list(color = "white", width = 1))) %>%
+              layout(
+                title = paste("Frequency of", input$dict_variable),
+                xaxis = list(title = "", tickangle = -45),
+                yaxis = list(title = "Count")
+              )
           } else {
-            plot.new()
-            text(0.5, 0.5, paste("Too many categories (", length(freq_table), ") to display"), 
-                 cex = 1.1, col = "gray")
+            # Show top 10 categories
+            top_categories <- sort(freq_table, decreasing = TRUE)[1:10]
+            df <- data.frame(
+              categories = names(top_categories),
+              counts = as.numeric(top_categories)
+            )
+            
+            plot_ly(df, x = ~categories, y = ~counts, type = "bar",
+                    marker = list(color = "lightgreen", line = list(color = "white", width = 1))) %>%
+              layout(
+                title = paste("Top 10 categories of", input$dict_variable),
+                xaxis = list(title = "", tickangle = -45),
+                yaxis = list(title = "Count")
+              )
           }
         }
       }, error = function(e) {
-        plot.new()
-        text(0.5, 0.5, paste("Error creating plot:", e$message), cex = 1, col = "red")
+        plot_ly() %>%
+          layout(
+            title = paste("Error creating plot:", e$message),
+            xaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE),
+            yaxis = list(showgrid = FALSE, showticklabels = FALSE, zeroline = FALSE)
+          )
       })
     })
     

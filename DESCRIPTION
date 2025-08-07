@@ -26,7 +26,11 @@ Imports:
     tidyr,
     stringr,
     DT,
-    shinycssloaders
+    shinycssloaders,
+    R6,
+    tools,
+    tidyselect,
+    plotly
 Suggests:
     testthat,
     rmarkdown,

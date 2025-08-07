@@ -67,9 +67,46 @@ run_databox <- function(demo_data = FALSE, ...) {
         ),
         bs4Dash::tabItem(
           tabName = "analysis",
-          fluidRow(
-            column(6, mod_metadata_ui("metadata")),
-            column(6, mod_eda_ui("eda"))
+          div(class = "container-fluid px-4",
+            div(class = "row g-4",
+              # Enhanced header section
+              div(class = "col-12 mb-3",
+                div(class = "d-flex align-items-center justify-content-between",
+                  div(
+                    h2(class = "text-primary mb-1",
+                      icon("microscope", class = "fa-fw me-2"),
+                      "Advanced Analytics Suite"
+                    ),
+                    p(class = "text-muted mb-0", 
+                      "Comprehensive metadata exploration and statistical analysis tools")
+                  ),
+                  div(class = "d-flex gap-2",
+                    tags$button(class = "btn btn-outline-primary btn-sm",
+                      type = "button", 
+                      onclick = "document.getElementById('metadata-card').scrollIntoView({behavior: 'smooth'});",
+                      icon("search"), " Metadata"
+                    ),
+                    tags$button(class = "btn btn-outline-success btn-sm",
+                      type = "button",
+                      onclick = "document.getElementById('eda-card').scrollIntoView({behavior: 'smooth'});", 
+                      icon("chart-line"), " Analytics"
+                    )
+                  )
+                )
+              ),
+              # Metadata Explorer Section
+              div(class = "col-12",
+                div(id = "metadata-card", mod_metadata_ui("metadata"))
+              ),
+              # Divider
+              div(class = "col-12",
+                hr(class = "my-4", style = "border-top: 2px solid #e9ecef;")
+              ),
+              # EDA Section  
+              div(class = "col-12",
+                div(id = "eda-card", mod_eda_ui("eda"))
+              )
+            )
           )
         )
       )
@@ -83,10 +120,10 @@ run_databox <- function(demo_data = FALSE, ...) {
   
   server <- function(input, output, session) {
     # File paths from sidebar (with optional demo data)
-    filepath <- mod_sidebar_server("sidebar", demo_data = demo_data)
+    sidebar_data <- mod_sidebar_server("sidebar", demo_data = demo_data)
     
     # Dataset from preview module
-    dataset <- mod_preview_server("preview", filepath)
+    dataset <- mod_preview_server("preview", sidebar_data$filepath, sidebar_data$demo_datasets)
     
     # Pass dataset to other modules
     mod_metadata_server("metadata", dataset)
