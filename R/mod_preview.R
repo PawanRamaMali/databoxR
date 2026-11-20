@@ -38,6 +38,21 @@ mod_preview_ui <- function(id) {
           br(),
           h5("Variable Information"),
           shinycssloaders::withSpinner(DT::dataTableOutput(ns("variable_info")), type = 4)
+        ),
+        # Reproducible R code for the current preview (load + column/row limits)
+        div(style = "margin-top: 15px;",
+          tags$details(
+            tags$summary(
+              style = "cursor: pointer; font-weight: 500; padding: 4px 0;",
+              icon("code"), " Reproducible R code"
+            ),
+            div(style = "margin-top: 10px;",
+              downloadButton(ns("download_script"), "Download R script",
+                             class = "btn-outline-secondary btn-sm"),
+              br(), br(),
+              verbatimTextOutput(ns("r_code"))
+            )
+          )
         )
       )
     )
@@ -180,6 +195,54 @@ mod_preview_server <- function(id, filepath, demo_datasets = NULL) {
       },
       content = function(file) {
         write.csv(dataset(), file, row.names = FALSE)
+      }
+    )
+
+    # Reproducible R code mirroring the current preview state
+    # (data load + the same column / row limits applied to the displayed table)
+    preview_code <- reactive({
+      req(dataset())
+      data <- dataset()
+
+      # Load line: demo datasets vs. real files
+      if (startsWith(filepath(), "DEMO:")) {
+        domain <- sub("DEMO:", "", filepath())
+        load_expr <- paste0("data <- get_demo_dataset(", r_literal(domain), ")")
+      } else {
+        load_expr <- build_load_expr(filepath())
+      }
+
+      # Column selection: matches the "Show All Columns" behaviour
+      cols <- NULL
+      if (!isTRUE(input$show_all_cols) && ncol(data) > 10) {
+        cols <- names(data)[1:10]
+      }
+      transform <- build_dplyr_expr("data", filters = NULL, cols = cols)
+
+      # Row cap: matches "Max Rows to Display"
+      n <- input$max_rows
+      if (!is.null(n) && is.finite(n) && nrow(data) > n) {
+        head_step <- paste0("utils::head(", format(n, scientific = FALSE), ")")
+        transform <- if (identical(transform, "data")) {
+          paste0("data |>\n  ", head_step)
+        } else {
+          paste0(transform, " |>\n  ", head_step)
+        }
+      }
+
+      build_full_script(load_expr, transform_expr = transform)
+    })
+
+    output$r_code <- renderText({
+      preview_code()
+    })
+
+    output$download_script <- downloadHandler(
+      filename = function() {
+        paste0("databoxR_script_", Sys.Date(), ".R")
+      },
+      content = function(file) {
+        writeLines(preview_code(), file)
       }
     )
     

@@ -122,7 +122,7 @@ mod_metadata_ui <- function(id) {
         title = tags$span(
           style = "display: flex; align-items: center; gap: 10px; padding: 8px 16px; margin-right: 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 1px solid #dee2e6; font-weight: 500;",
           icon("check-circle", class = "fa-sm"),
-          "CDISC"
+          "Variable Checks"
         ),
         value = "cdisc",
         br(),
@@ -130,10 +130,10 @@ mod_metadata_ui <- function(id) {
           div(class = "card-header bg-gradient-warning text-dark",
             h5(class = "card-title mb-0",
               icon("shield-alt", class = "fa-fw me-2"),
-              "CDISC Compliance Validation"
+              "Basic Variable Checks"
             ),
-            p(class = "card-text small mb-0 mt-2", 
-              "Automated checks for CDISC standards compliance and data quality")
+            p(class = "card-text small mb-0 mt-2",
+              "Lightweight checks for standard SDTM/ADaM variable names and naming conventions (not full CDISC conformance validation)")
           ),
           div(class = "card-body p-0",
             div(style = "height: 450px; overflow: auto;",
