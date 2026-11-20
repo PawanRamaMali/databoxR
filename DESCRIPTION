@@ -34,5 +34,7 @@ Imports:
 Suggests:
     testthat,
     rmarkdown,
-    DataExplorer
+    DataExplorer,
+    metacore,
+    metatools
 RoxygenNote: 7.2.3
