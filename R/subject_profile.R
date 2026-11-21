@@ -110,24 +110,46 @@ subject_overview <- function(datasets, subject_id) {
   )
 }
 
+#' Locate a domain in a set of datasets by name or DOMAIN value
+#'
+#' @param datasets A named list of data.frames.
+#' @param domain The domain code to find (e.g. "DM", "AE").
+#' @return The matching data.frame, or NULL.
+#' @keywords internal
+find_domain <- function(datasets, domain) {
+  if (is.null(datasets) || !length(datasets)) return(NULL)
+  domain <- toupper(domain)
+  nms <- names(datasets)
+  hit <- which(toupper(nms) == domain)
+  if (length(hit)) return(datasets[[hit[1]]])
+  for (d in datasets) {
+    up <- toupper(names(d))
+    if ("DOMAIN" %in% up) {
+      dcol <- names(d)[up == "DOMAIN"][1]
+      if (domain %in% toupper(as.character(d[[dcol]]))) return(d)
+    }
+  }
+  NULL
+}
+
 #' Locate the demographics (DM) dataset in a set of domains
 #'
 #' @param datasets A named list of data.frames.
 #' @return The DM data.frame, or NULL if none can be identified.
 #' @keywords internal
 find_dm <- function(datasets) {
-  if (is.null(datasets) || !length(datasets)) return(NULL)
-  nms <- names(datasets)
-  hit <- which(toupper(nms) == "DM")
-  if (length(hit)) return(datasets[[hit[1]]])
-  for (d in datasets) {
-    up <- toupper(names(d))
-    if ("DOMAIN" %in% up) {
-      dcol <- names(d)[up == "DOMAIN"][1]
-      if ("DM" %in% toupper(as.character(d[[dcol]]))) return(d)
-    }
-  }
-  NULL
+  find_domain(datasets, "DM")
+}
+
+#' A column from a data.frame by case-insensitive name
+#'
+#' @param df A data.frame.
+#' @param name A column name.
+#' @return The column vector, or NULL if absent.
+#' @keywords internal
+get_col <- function(df, name) {
+  idx <- which(toupper(names(df)) == toupper(name))
+  if (length(idx)) df[[idx[1]]] else NULL
 }
 
 #' Demographics summary for one subject
@@ -206,23 +228,46 @@ parse_iso_date <- function(x) {
   suppressWarnings(as.Date(s, format = "%Y-%m-%d"))
 }
 
+#' Reference start date (RFSTDTC) for one subject
+#'
+#' @param datasets A named list of data.frames.
+#' @param subject_id A single subject ID.
+#' @return A Date (NA if it cannot be determined).
+#' @keywords internal
+subject_ref_date <- function(datasets, subject_id) {
+  dm <- find_dm(datasets)
+  if (is.null(dm)) return(as.Date(NA))
+  col <- find_subject_col(dm)
+  if (is.null(col)) return(as.Date(NA))
+  row <- dm[!is.na(dm[[col]]) & as.character(dm[[col]]) == subject_id, , drop = FALSE]
+  if (nrow(row) == 0) return(as.Date(NA))
+  ref <- get_col(row, "RFSTDTC")
+  if (is.null(ref)) ref <- get_col(row, "RFXSTDTC")
+  if (is.null(ref)) return(as.Date(NA))
+  parse_iso_date(ref[1])
+}
+
 #' Merged chronological timeline for one subject
 #'
 #' Scans each domain's records for a start-date column (\code{--STDTC},
 #' \code{--DTC}, ...) and an event-label column (\code{--TERM}, \code{--DECOD},
 #' \code{--TRT}, \code{--TEST}), then stacks the dated events across domains and
 #' orders them by date. This is the cross-domain view: one subject's journey
-#' through the study in one table.
+#' through the study in one table. When a reference start date is available the
+#' CDISC study day is added (day 1 is the reference date; there is no day 0).
 #'
 #' @param datasets A named list of data.frames.
 #' @param subject_id A single subject ID.
-#' @return A data.frame with columns Date, Domain, Event (zero rows if no dated
-#'   events are found).
+#' @param ref_date Optional reference start Date; derived from DM RFSTDTC when
+#'   NULL.
+#' @return A data.frame with columns Date, Day, Domain, Event (zero rows if no
+#'   dated events are found).
 #' @export
-subject_timeline <- function(datasets, subject_id) {
+subject_timeline <- function(datasets, subject_id, ref_date = NULL) {
+  empty <- data.frame(Date = as.Date(character(0)), Day = integer(0),
+                      Domain = character(0), Event = character(0),
+                      stringsAsFactors = FALSE)
   recs <- subject_records(datasets, subject_id)
-  empty <- data.frame(Date = as.Date(character(0)), Domain = character(0),
-                      Event = character(0), stringsAsFactors = FALSE)
   if (!length(recs)) return(empty)
 
   rows <- list()
@@ -244,7 +289,99 @@ subject_timeline <- function(datasets, subject_id) {
   }
   if (!length(rows)) return(empty)
   out <- do.call(rbind, rows)
-  out <- out[order(out$Date), , drop = FALSE]
+
+  if (is.null(ref_date)) ref_date <- subject_ref_date(datasets, subject_id)
+  if (length(ref_date) == 1 && !is.na(ref_date)) {
+    delta <- as.integer(out$Date - ref_date)
+    out$Day <- ifelse(delta >= 0, delta + 1L, delta)
+  } else {
+    out$Day <- NA_integer_
+  }
+
+  out <- out[order(out$Date), c("Date", "Day", "Domain", "Event"), drop = FALSE]
   rownames(out) <- NULL
   out
+}
+
+#' Pick one domain out of an already-subset record list
+#'
+#' @param recs A named list of per-domain subject records.
+#' @param domain The domain code to pick.
+#' @return The matching data.frame, or NULL.
+#' @keywords internal
+pick_domain <- function(recs, domain) {
+  find_domain(recs, domain)
+}
+
+#' Headline counts for one subject
+#'
+#' Summarises a subject across domains into a handful of KPIs suitable for value
+#' boxes: the number of domains they appear in, total records, adverse-event
+#' count, serious adverse events, worst AE severity, and number of visits.
+#'
+#' @param datasets A named list of data.frames.
+#' @param subject_id A single subject ID.
+#' @return A named list of KPI values.
+#' @export
+subject_kpis <- function(datasets, subject_id) {
+  recs <- subject_records(datasets, subject_id)
+  out <- list(
+    n_domains = length(recs),
+    n_records = if (length(recs)) sum(vapply(recs, nrow, integer(1))) else 0L,
+    n_ae = 0L,
+    n_serious_ae = 0L,
+    worst_ae_severity = NA_character_,
+    n_visits = NA_integer_
+  )
+
+  ae <- pick_domain(recs, "AE")
+  if (!is.null(ae) && nrow(ae) > 0) {
+    out$n_ae <- nrow(ae)
+    ser <- get_col(ae, "AESER")
+    if (!is.null(ser)) {
+      out$n_serious_ae <- sum(toupper(trimws(as.character(ser))) %in% c("Y", "YES"),
+                              na.rm = TRUE)
+    }
+    sev <- get_col(ae, "AESEV")
+    if (!is.null(sev)) {
+      rank <- c(MILD = 1L, MODERATE = 2L, SEVERE = 3L)
+      present <- rank[toupper(trimws(as.character(sev)))]
+      present <- present[!is.na(present)]
+      if (length(present)) out$worst_ae_severity <- names(rank)[max(present)]
+    }
+  }
+
+  vs <- pick_domain(recs, "VS")
+  if (!is.null(vs) && nrow(vs) > 0) {
+    vcol <- get_col(vs, "VISITNUM")
+    if (is.null(vcol)) vcol <- get_col(vs, "VISIT")
+    if (!is.null(vcol)) out$n_visits <- length(unique(vcol[!is.na(vcol)]))
+  }
+
+  out
+}
+
+#' Reproducible R code that extracts one subject across domains
+#'
+#' @param subject_id A single subject ID.
+#' @param domains Character vector of domain object names to filter.
+#' @param libraries Packages to emit \code{library()} calls for.
+#' @return A single multi-line string of runnable R.
+#' @export
+subject_profile_code <- function(subject_id, domains, libraries = "dplyr") {
+  lines <- character(0)
+  if (length(libraries)) {
+    lines <- c(lines, vapply(libraries, function(p) paste0("library(", p, ")"),
+                             character(1)), "")
+  }
+  lines <- c(lines, paste0("subject_id <- ", r_literal(subject_id)))
+  if (length(domains)) {
+    lines <- c(lines, "")
+    for (dm in domains) {
+      obj <- paste0(tolower(dm), "_subject")
+      lines <- c(lines,
+                 paste0(obj, " <- dplyr::filter(", dm, ", USUBJID == subject_id)"))
+    }
+  }
+  paste(lines, collapse = "\n")
 }

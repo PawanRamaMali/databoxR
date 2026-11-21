@@ -114,6 +114,72 @@ test_that("subject_timeline returns zero rows when no dates are present", {
   expect_true(all(c("Date", "Domain", "Event") %in% names(tl)))
 })
 
+test_that("subject_timeline adds a CDISC study day from RFSTDTC", {
+  dm2 <- data.frame(
+    DOMAIN = "DM", USUBJID = "S1-001", RFSTDTC = "2023-03-01",
+    stringsAsFactors = FALSE
+  )
+  ds2 <- list(DM = dm2, AE = ae[ae$USUBJID == "S1-001", ])
+  tl <- subject_timeline(ds2, "S1-001")
+  expect_true("Day" %in% names(tl))
+  # AE on 2023-03-10 is 10 days after ref -> study day 10 (no day 0)
+  ae_row <- tl[tl$Domain == "AE" & tl$Event == "Headache", ]
+  expect_equal(ae_row$Day, 10L)
+  # explicit ref_date overrides
+  tl2 <- subject_timeline(ds2, "S1-001", ref_date = as.Date("2023-03-09"))
+  expect_equal(tl2$Day[tl2$Event == "Headache"], 2L)
+})
+
+test_that("subject_kpis summarises events and severity", {
+  ae_sev <- data.frame(
+    DOMAIN = "AE", USUBJID = "S1-001",
+    AETERM = c("Headache", "Rash", "Nausea"),
+    AESEV = c("MILD", "SEVERE", "MODERATE"),
+    AESER = c("N", "Y", "N"),
+    stringsAsFactors = FALSE
+  )
+  vs2 <- data.frame(
+    DOMAIN = "VS", USUBJID = "S1-001",
+    VISITNUM = c(1, 1, 2, 3),
+    stringsAsFactors = FALSE
+  )
+  ds2 <- list(DM = dm, AE = ae_sev, VS = vs2)
+  k <- subject_kpis(ds2, "S1-001")
+  expect_equal(k$n_ae, 3L)
+  expect_equal(k$n_serious_ae, 1L)
+  expect_equal(k$worst_ae_severity, "SEVERE")
+  expect_equal(k$n_visits, 3L)
+  expect_equal(k$n_domains, 3L)
+
+  # a subject with no AEs
+  k0 <- subject_kpis(list(DM = dm), "S1-002")
+  expect_equal(k0$n_ae, 0L)
+  expect_equal(k0$n_serious_ae, 0L)
+  expect_true(is.na(k0$worst_ae_severity))
+})
+
+test_that("subject_profile_code emits runnable, parseable filters", {
+  code <- subject_profile_code("S1-001", c("DM", "AE"))
+  expect_true(grepl("library(dplyr)", code, fixed = TRUE))
+  expect_true(grepl("subject_id <- \"S1-001\"", code, fixed = TRUE))
+  expect_true(grepl("dm_subject <- dplyr::filter(DM, USUBJID == subject_id)",
+                    code, fixed = TRUE))
+  expect_true(grepl("ae_subject <- dplyr::filter(AE, USUBJID == subject_id)",
+                    code, fixed = TRUE))
+  expect_silent(parse(text = code))
+  # no domains still parses
+  expect_silent(parse(text = subject_profile_code("X", character(0))))
+})
+
+test_that("find_domain and get_col resolve by name or DOMAIN value", {
+  expect_identical(find_domain(datasets, "AE"), ae)
+  # located via DOMAIN column when the list name differs
+  expect_identical(find_domain(list(x = ae), "AE"), ae)
+  expect_null(find_domain(datasets, "LB"))
+  expect_equal(get_col(dm, "sex"), dm$SEX)
+  expect_null(get_col(dm, "NOPE"))
+})
+
 test_that("helpers round-trip against generated demo data", {
   demo <- generate_demo_data(n_subjects = 20)
   subs <- list_subjects(demo)
