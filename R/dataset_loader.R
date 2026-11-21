@@ -24,14 +24,24 @@
 #' }
 read_sdtm_adam <- function(path, nrows = NULL, cols = NULL, encoding = "UTF-8", 
                           validate_data = TRUE, progress_callback = NULL) {
-  # Simple input validation
-  if (missing(path) || is.null(path) || path == "" || !file.exists(path)) {
-    stop("Invalid or non-existent file path: ", path)
+  # Input validation with specific, actionable messages
+  if (missing(path) || is.null(path) || length(path) == 0 || !nzchar(path)) {
+    stop("Path parameter is required", call. = FALSE)
   }
-  
+  if (!file.exists(path)) {
+    stop("File does not exist: ", path, call. = FALSE)
+  }
+
   # Get file extension safely
   ext <- tolower(tools::file_ext(path))
-  if (is.na(ext) || length(ext) == 0) ext <- ""
+  if (length(ext) == 0 || is.na(ext)) ext <- ""
+
+  # Only XPT, CSV, and TXT are supported
+  if (!ext %in% c("xpt", "csv", "txt")) {
+    stop("Unsupported format: ",
+         if (nzchar(ext)) paste0(".", ext) else "(no extension)",
+         ". Supported formats are .xpt, .csv, and .txt.", call. = FALSE)
+  }
   
   # Get file size
   file_size <- tryCatch(file.size(path), error = function(e) 0)
@@ -71,9 +81,9 @@ read_sdtm_adam <- function(path, nrows = NULL, cols = NULL, encoding = "UTF-8",
       
       # Read file
       result <- readr::read_delim(
-        path, 
+        path,
         delim = delim,
-        n_max = nrows,
+        n_max = if (is.null(nrows)) Inf else nrows,
         show_col_types = FALSE,
         locale = readr::locale(encoding = encoding),
         trim_ws = TRUE,

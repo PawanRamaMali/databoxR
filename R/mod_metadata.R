@@ -122,7 +122,7 @@ mod_metadata_ui <- function(id) {
         title = tags$span(
           style = "display: flex; align-items: center; gap: 10px; padding: 8px 16px; margin-right: 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 1px solid #dee2e6; font-weight: 500;",
           icon("check-circle", class = "fa-sm"),
-          "CDISC"
+          "Variable Checks"
         ),
         value = "cdisc",
         br(),
@@ -130,10 +130,10 @@ mod_metadata_ui <- function(id) {
           div(class = "card-header bg-gradient-warning text-dark",
             h5(class = "card-title mb-0",
               icon("shield-alt", class = "fa-fw me-2"),
-              "CDISC Compliance Validation"
+              "Basic Variable Checks"
             ),
-            p(class = "card-text small mb-0 mt-2", 
-              "Automated checks for CDISC standards compliance and data quality")
+            p(class = "card-text small mb-0 mt-2",
+              "Lightweight checks for standard SDTM/ADaM variable names and naming conventions (not full CDISC conformance validation)")
           ),
           div(class = "card-body p-0",
             div(style = "height: 450px; overflow: auto;",
@@ -142,6 +142,47 @@ mod_metadata_ui <- function(id) {
                 type = 7, color = "#ffc107"
               )
             )
+          )
+        )
+      ),
+      tabPanel(
+        title = tags$span(
+          style = "display: flex; align-items: center; gap: 10px; padding: 8px 16px; margin-right: 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 1px solid #dee2e6; font-weight: 500;",
+          icon("file-code", class = "fa-sm"),
+          "Define.xml"
+        ),
+        value = "define",
+        br(),
+        div(class = "card border-0 shadow-sm",
+          div(class = "card-header bg-gradient-info text-white",
+            h5(class = "card-title mb-0",
+              icon("file-code", class = "fa-fw me-2"),
+              "Define.xml Metadata"
+            ),
+            p(class = "card-text small mb-0 mt-2",
+              "Upload a define.xml to view its metadata and compare it against the loaded dataset (requires the 'metacore' package)")
+          ),
+          div(class = "card-body",
+            fluidRow(
+              column(6, fileInput(ns("define_file"), "Define.xml file",
+                                  accept = c(".xml", "text/xml", "application/xml"))),
+              column(6, selectInput(ns("define_dataset"), "Define dataset",
+                                    choices = NULL))
+            ),
+            h6(class = "text-info mt-2",
+               icon("database", class = "fa-fw me-1"), "Datasets"),
+            DT::dataTableOutput(ns("define_datasets")),
+            h6(class = "text-info mt-4",
+               icon("list-ul", class = "fa-fw me-1"), "Variable dictionary"),
+            DT::dataTableOutput(ns("define_dictionary")),
+            h6(class = "text-info mt-4",
+               icon("magic", class = "fa-fw me-1"),
+               "Smart hints: define vs loaded data"),
+            DT::dataTableOutput(ns("define_hints")),
+            h6(class = "text-info mt-4",
+               icon("clipboard-check", class = "fa-fw me-1"),
+               "Conformance checks"),
+            DT::dataTableOutput(ns("define_conformance"))
           )
         )
       )
@@ -399,5 +440,65 @@ mod_metadata_server <- function(id, dataset) {
       dom = 'frtip',
       autoWidth = TRUE
     ))
+
+    # ---- Define.xml ----
+    # Parse the uploaded define.xml into a metacore object. The upload is
+    # copied to a .xml path first so load_define's extension check passes
+    # regardless of how Shiny names the temp file.
+    define_mc <- reactive({
+      req(input$define_file)
+      # Unique temp path per upload so concurrent sessions do not clobber
+      # each other's define.xml.
+      xml_path <- tempfile(fileext = ".xml")
+      file.copy(input$define_file$datapath, xml_path, overwrite = TRUE)
+      tryCatch(
+        load_define(xml_path),
+        error = function(e) {
+          showNotification(paste("Could not read define.xml:", e$message),
+                           type = "error", duration = 8)
+          NULL
+        }
+      )
+    })
+
+    # Populate the dataset selector from the define's datasets
+    observeEvent(define_mc(), {
+      mc <- define_mc()
+      if (is.null(mc)) return()
+      ds <- define_datasets(mc)$dataset
+      updateSelectInput(session, "define_dataset", choices = ds,
+                        selected = ds[1])
+    })
+
+    output$define_datasets <- DT::renderDataTable({
+      req(define_mc())
+      define_datasets(define_mc())
+    }, options = list(pageLength = 5, scrollX = TRUE, dom = 'tip'))
+
+    output$define_dictionary <- DT::renderDataTable({
+      req(define_mc(), input$define_dataset)
+      define_var_metadata(define_mc(), dataset = input$define_dataset)
+    }, options = list(pageLength = 10, scrollX = TRUE))
+
+    output$define_hints <- DT::renderDataTable({
+      req(define_mc(), input$define_dataset, dataset())
+      compare_define_to_data(dataset(), define_mc(), input$define_dataset)
+    }, options = list(pageLength = 10, scrollX = TRUE))
+
+    output$define_conformance <- DT::renderDataTable({
+      req(define_mc(), input$define_dataset, dataset())
+      res <- check_conformance(dataset(), define_mc(), input$define_dataset)
+      DT::datatable(res, options = list(pageLength = 10, scrollX = TRUE),
+                    rownames = FALSE) |>
+        DT::formatStyle(
+          "Severity",
+          target = "cell",
+          color = DT::styleEqual(
+            c("Error", "Warning", "Info", "Success"),
+            c("#dc3545", "#fd7e14", "#6c757d", "#198754")
+          ),
+          fontWeight = "bold"
+        )
+    })
   })
 }

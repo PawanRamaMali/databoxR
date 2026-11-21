@@ -206,7 +206,8 @@ DataCache <- R6::R6Class("DataCache",
     
     #' Get current cache memory usage
     get_cache_memory = function() {
-      sum(sapply(self$cache_store, function(x) x$size))
+      if (length(self$cache_store) == 0) return(0)
+      sum(vapply(self$cache_store, function(x) as.numeric(x$size), numeric(1)))
     },
     
     #' Cleanup cache by size limit
@@ -238,7 +239,8 @@ DataCache <- R6::R6Class("DataCache",
     get_stats = function() {
       list(
         items = length(self$cache_store),
-        memory_mb = round(self$get_cache_memory() / 1024^2, 2),
+        memory_bytes = self$get_cache_memory(),
+        memory_mb = round(self$get_cache_memory() / 1024^2, 4),
         max_memory_mb = round(self$max_memory / 1024^2, 2),
         max_items = self$max_size
       )
@@ -246,16 +248,20 @@ DataCache <- R6::R6Class("DataCache",
   )
 )
 
-#' Global cache instance
-.global_cache <- NULL
+#' Internal, mutable holder for package-global state
+#'
+#' An environment's bindings stay mutable even when the package namespace is
+#' locked, so this is used instead of a top-level `<<-` assignment (which fails
+#' with "cannot change value of locked binding" in an installed package).
+.databox_state <- new.env(parent = emptyenv())
 
 #' Get or create global cache instance
 #' @return DataCache instance
 get_global_cache <- function() {
-  if (is.null(.global_cache)) {
-    .global_cache <<- DataCache$new()
+  if (is.null(.databox_state$cache)) {
+    .databox_state$cache <- DataCache$new()
   }
-  .global_cache
+  .databox_state$cache
 }
 
 #' Enhanced file reader with caching
