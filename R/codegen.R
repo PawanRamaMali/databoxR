@@ -16,6 +16,7 @@
 #' @param v A length >= 1 atomic vector (character, numeric, integer, or logical).
 #' @return A single string of R source code.
 #' @keywords internal
+#' @noRd
 r_literal <- function(v) {
   if (length(v) == 0) {
     return("character(0)")
@@ -44,6 +45,7 @@ r_literal <- function(v) {
 #' @param x A length-1 numeric value.
 #' @return A single string of R source code.
 #' @keywords internal
+#' @noRd
 num_literal <- function(x) {
   if (is.na(x)) return("NA")
   for (d in 15:17) {
@@ -58,6 +60,7 @@ num_literal <- function(x) {
 #' @param x A single column name.
 #' @return The name, wrapped in backticks if it would otherwise be non-syntactic.
 #' @keywords internal
+#' @noRd
 backtick_if_needed <- function(x) {
   if (identical(make.names(x), x)) x else paste0("`", x, "`")
 }
@@ -76,6 +79,7 @@ backtick_if_needed <- function(x) {
 #' @param f A filter spec list.
 #' @return A single condition string, or "" if the spec is incomplete.
 #' @keywords internal
+#' @noRd
 format_filter_condition <- function(f) {
   if (is.null(f) || is.null(f$var) || !nzchar(f$var)) return("")
   var <- backtick_if_needed(f$var)
@@ -115,6 +119,7 @@ format_filter_condition <- function(f) {
 #' @return A single string. When there are no filters and no selection, just
 #'   \code{dataset_name} is returned (no pipeline).
 #' @keywords internal
+#' @noRd
 build_dplyr_expr <- function(dataset_name = "data", filters = NULL, cols = NULL) {
   steps <- character(0)
 
@@ -142,6 +147,7 @@ build_dplyr_expr <- function(dataset_name = "data", filters = NULL, cols = NULL)
 #' @param dataset_name Name to assign the loaded data to.
 #' @return An assignment string, e.g. \code{data <- read_sdtm_adam("dm.xpt")}.
 #' @keywords internal
+#' @noRd
 build_load_expr <- function(path, dataset_name = "data") {
   paste0(dataset_name, " <- read_sdtm_adam(", r_literal(path), ")")
 }
@@ -156,6 +162,7 @@ build_load_expr <- function(path, dataset_name = "data") {
 #' @param libraries Character vector of packages to emit \code{library()} calls for.
 #' @return A single multi-line string.
 #' @keywords internal
+#' @noRd
 build_full_script <- function(load_expr, transform_expr = NULL, plot_expr = NULL,
                               dataset_name = "data", libraries = "databoxR") {
   lines <- character(0)

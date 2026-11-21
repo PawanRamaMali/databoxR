@@ -2,21 +2,46 @@
 % Please edit documentation in R/dataset_loader.R
 \name{read_sdtm_adam}
 \alias{read_sdtm_adam}
-\title{Read SDTM/ADaM Datasets}
+\title{Read SDTM/ADaM Datasets with Enhanced Features}
 \usage{
-read_sdtm_adam(path)
+read_sdtm_adam(
+  path,
+  nrows = NULL,
+  cols = NULL,
+  encoding = "UTF-8",
+  validate_data = TRUE,
+  progress_callback = NULL
+)
 }
 \arguments{
 \item{path}{File path to the dataset}
+
+\item{nrows}{Maximum number of rows to read (NULL for all rows)}
+
+\item{cols}{Vector of column names or indices to select (NULL for all columns)}
+
+\item{encoding}{Character encoding (default: "UTF-8")}
+
+\item{validate_data}{Logical, whether to perform data validation (default: TRUE)}
+
+\item{progress_callback}{Function to call with progress updates (optional)}
 }
 \value{
 A data.frame containing the dataset
 }
 \description{
-Reads SDTM/ADaM datasets from various formats (XPT, CSV, TXT)
+Reads SDTM/ADaM datasets from various formats (XPT, CSV, TXT) with optional
+row limiting, column selection, and performance optimizations.
 }
 \examples{
 \dontrun{
+  # Read all data
   data <- read_sdtm_adam("path/to/dataset.xpt")
+  
+  # Read first 1000 rows only
+  data <- read_sdtm_adam("path/to/large_dataset.csv", nrows = 1000)
+  
+  # Read specific columns
+  data <- read_sdtm_adam("path/to/dataset.xpt", cols = c("USUBJID", "AGE"))
 }
 }

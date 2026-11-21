@@ -204,13 +204,16 @@ DataCache <- R6::R6Class("DataCache",
       TRUE
     },
     
-    #' Get current cache memory usage
+    #' @description Get current cache memory usage in bytes
+    #' @return Numeric total size of cached items in bytes
     get_cache_memory = function() {
       if (length(self$cache_store) == 0) return(0)
       sum(vapply(self$cache_store, function(x) as.numeric(x$size), numeric(1)))
     },
     
-    #' Cleanup cache by size limit
+    #' @description Evict the least recently accessed item when the cache
+    #'   reaches its size limit
+    #' @return Invisibly `NULL`, called for its side effect
     cleanup_cache = function() {
       if (length(self$cache_store) >= self$max_size) {
         # Remove oldest accessed items
@@ -220,7 +223,9 @@ DataCache <- R6::R6Class("DataCache",
       }
     },
     
-    #' Cleanup cache by memory usage
+    #' @description Evict least recently accessed items until the cache fits
+    #'   within its memory budget
+    #' @return Invisibly `NULL`, called for its side effect
     cleanup_by_memory = function() {
       while (self$get_cache_memory() > self$max_memory && length(self$cache_store) > 0) {
         access_times <- sapply(self$cache_store, function(x) x$last_accessed)
@@ -229,13 +234,15 @@ DataCache <- R6::R6Class("DataCache",
       }
     },
     
-    #' Clear all cached data
+    #' @description Remove all cached data and trigger garbage collection
+    #' @return Invisibly `NULL`, called for its side effect
     clear = function() {
       self$cache_store <- list()
       gc() # Trigger garbage collection
     },
     
-    #' Get cache statistics
+    #' @description Summarise cache usage: item count and memory figures
+    #' @return A list with item count and current/maximum memory and size
     get_stats = function() {
       list(
         items = length(self$cache_store),
@@ -253,10 +260,12 @@ DataCache <- R6::R6Class("DataCache",
 #' An environment's bindings stay mutable even when the package namespace is
 #' locked, so this is used instead of a top-level `<<-` assignment (which fails
 #' with "cannot change value of locked binding" in an installed package).
+#' @noRd
 .databox_state <- new.env(parent = emptyenv())
 
 #' Get or create global cache instance
 #' @return DataCache instance
+#' @noRd
 get_global_cache <- function() {
   if (is.null(.databox_state$cache)) {
     .databox_state$cache <- DataCache$new()
@@ -298,6 +307,7 @@ read_with_cache <- function(path, use_cache = TRUE, ...) {
 #' Null coalescing operator
 #' @param x First value
 #' @param y Second value (used if x is NULL)
+#' @noRd
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }
@@ -308,6 +318,7 @@ read_with_cache <- function(path, use_cache = TRUE, ...) {
 #' @param default Default value to return on error
 #' @param error_message Custom error message
 #' @return Result of expression or default value
+#' @noRd
 safe_execute <- function(expr, default = NULL, error_message = NULL) {
   tryCatch(
     expr,
@@ -326,6 +337,7 @@ safe_execute <- function(expr, default = NULL, error_message = NULL) {
 #'
 #' @param size_bytes File size in bytes
 #' @return Formatted size string
+#' @noRd
 format_file_size <- function(size_bytes) {
   if (is.na(size_bytes) || size_bytes == 0) return("0 B")
   
