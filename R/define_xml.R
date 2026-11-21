@@ -104,6 +104,7 @@ define_var_metadata <- function(mc, dataset = NULL) {
 #' @param x A vector (a data.frame column).
 #' @return One of "date", "numeric", "logical", "text".
 #' @keywords internal
+#' @noRd
 describe_r_type <- function(x) {
   if (inherits(x, c("Date", "POSIXct", "POSIXt"))) "date"
   else if (is.numeric(x)) "numeric"

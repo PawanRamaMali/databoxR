@@ -15,6 +15,7 @@
 #' @param data A data.frame.
 #' @return The matching column name, or NULL if none is present.
 #' @keywords internal
+#' @noRd
 find_subject_col <- function(data) {
   if (is.null(data) || is.null(names(data)) || length(names(data)) == 0) {
     return(NULL)
@@ -37,6 +38,7 @@ find_subject_col <- function(data) {
 #' @param fallback A fallback name (e.g. the source file name).
 #' @return A single upper-case string.
 #' @keywords internal
+#' @noRd
 domain_key <- function(data, fallback = "DATA") {
   up <- toupper(names(data))
   if ("DOMAIN" %in% up) {
@@ -116,6 +118,7 @@ subject_overview <- function(datasets, subject_id) {
 #' @param domain The domain code to find (e.g. "DM", "AE").
 #' @return The matching data.frame, or NULL.
 #' @keywords internal
+#' @noRd
 find_domain <- function(datasets, domain) {
   if (is.null(datasets) || !length(datasets)) return(NULL)
   domain <- toupper(domain)
@@ -137,6 +140,7 @@ find_domain <- function(datasets, domain) {
 #' @param datasets A named list of data.frames.
 #' @return The DM data.frame, or NULL if none can be identified.
 #' @keywords internal
+#' @noRd
 find_dm <- function(datasets) {
   find_domain(datasets, "DM")
 }
@@ -147,6 +151,7 @@ find_dm <- function(datasets) {
 #' @param name A column name.
 #' @return The column vector, or NULL if absent.
 #' @keywords internal
+#' @noRd
 get_col <- function(df, name) {
   idx <- which(toupper(names(df)) == toupper(name))
   if (length(idx)) df[[idx[1]]] else NULL
@@ -205,6 +210,7 @@ subject_demographics <- function(datasets, subject_id) {
 #' @param suffixes Character vector of upper-case suffixes, tried in order.
 #' @return The matching column name, or NULL.
 #' @keywords internal
+#' @noRd
 first_matching <- function(nms, suffixes) {
   if (!length(nms)) return(NULL)
   up <- toupper(nms)
@@ -223,6 +229,7 @@ first_matching <- function(nms, suffixes) {
 #' @param x A vector.
 #' @return A Date vector.
 #' @keywords internal
+#' @noRd
 parse_iso_date <- function(x) {
   s <- substr(as.character(x), 1, 10)
   suppressWarnings(as.Date(s, format = "%Y-%m-%d"))
@@ -234,6 +241,7 @@ parse_iso_date <- function(x) {
 #' @param subject_id A single subject ID.
 #' @return A Date (NA if it cannot be determined).
 #' @keywords internal
+#' @noRd
 subject_ref_date <- function(datasets, subject_id) {
   dm <- find_dm(datasets)
   if (is.null(dm)) return(as.Date(NA))
@@ -309,6 +317,7 @@ subject_timeline <- function(datasets, subject_id, ref_date = NULL) {
 #' @param domain The domain code to pick.
 #' @return The matching data.frame, or NULL.
 #' @keywords internal
+#' @noRd
 pick_domain <- function(recs, domain) {
   find_domain(recs, domain)
 }

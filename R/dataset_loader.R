@@ -140,6 +140,7 @@ read_sdtm_adam <- function(path, nrows = NULL, cols = NULL, encoding = "UTF-8",
 #' @param data A data.frame
 #' @param detailed Logical, whether to include detailed analysis (default: FALSE)
 #' @return A list with dataset information
+#' @noRd
 get_dataset_info <- function(data, detailed = FALSE) {
   if (is.null(data) || nrow(data) == 0) {
     return(list(
