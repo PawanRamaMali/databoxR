@@ -102,10 +102,10 @@ mod_eda_ui <- function(id) {
                 selectInput(ns("plot_type"), 
                            label = NULL,
                            choices = c(
-                             "📊 Histogram" = "hist", 
-                             "📦 Box Plot" = "box",
-                             "📈 Density Plot" = "density",
-                             "🎯 Violin Plot" = "violin"
+                             "\U0001F4CA Histogram" = "hist", 
+                             "\U0001F4E6 Box Plot" = "box",
+                             "\U0001F4C8 Density Plot" = "density",
+                             "\U0001F3AF Violin Plot" = "violin"
                            ), 
                            width = "100%")
               )
@@ -265,30 +265,30 @@ mod_eda_server <- function(id, dataset) {
         "=== DATA QUALITY ASSESSMENT ===",
         "",
         "Dataset Overview:",
-        paste("  • Total cells:", formatC(total_cells, format = "f", digits = 0, big.mark = ",")),
-        paste("  • Missing cells:", formatC(missing_cells, format = "f", digits = 0, big.mark = ","), 
+        paste("  \u2022 Total cells:", formatC(total_cells, format = "f", digits = 0, big.mark = ",")),
+        paste("  \u2022 Missing cells:", formatC(missing_cells, format = "f", digits = 0, big.mark = ","), 
               paste0("(", missing_rate, "%)")),
-        paste("  • Memory usage:", memory_mb, "MB"),
+        paste("  \u2022 Memory usage:", memory_mb, "MB"),
         "",
         "Data Quality Issues:",
-        paste("  • Duplicate rows:", formatC(duplicate_rows, format = "f", digits = 0, big.mark = ",")),
-        paste("  • Constant columns:", constant_cols),
+        paste("  \u2022 Duplicate rows:", formatC(duplicate_rows, format = "f", digits = 0, big.mark = ",")),
+        paste("  \u2022 Constant columns:", constant_cols),
         if (length(info$high_missing_vars) > 0) 
-          paste("  • High missing vars:", length(info$high_missing_vars)) else NULL,
+          paste("  \u2022 High missing vars:", length(info$high_missing_vars)) else NULL,
         "",
         "Data Types:",
-        paste("  • Numeric:", info$numeric_count %||% 0),
-        paste("  • Character:", info$character_count %||% 0),
-        paste("  • Factor:", info$factor_count %||% 0),
-        paste("  • Date:", info$date_count %||% 0),
+        paste("  \u2022 Numeric:", info$numeric_count %||% 0),
+        paste("  \u2022 Character:", info$character_count %||% 0),
+        paste("  \u2022 Factor:", info$factor_count %||% 0),
+        paste("  \u2022 Date:", info$date_count %||% 0),
         "",
         "=== RECOMMENDATIONS ===",
-        if (missing_rate > 15) "⚠️ HIGH missing data - investigate patterns" else 
-        if (missing_rate > 5) "⚠️ MODERATE missing data - consider imputation" else 
-        "✅ Missing data levels acceptable",
-        if (duplicate_rows > 0) "⚠️ Remove duplicate rows before analysis" else "✅ No duplicate rows found",
-        if (constant_cols > 0) "⚠️ Consider removing constant columns" else "✅ No constant columns detected",
-        if (memory_mb > 100) "💾 Large dataset - consider data sampling for exploration" else NULL
+        if (missing_rate > 15) "\u26A0\uFE0F HIGH missing data - investigate patterns" else 
+        if (missing_rate > 5) "\u26A0\uFE0F MODERATE missing data - consider imputation" else 
+        "\u2705 Missing data levels acceptable",
+        if (duplicate_rows > 0) "\u26A0\uFE0F Remove duplicate rows before analysis" else "\u2705 No duplicate rows found",
+        if (constant_cols > 0) "\u26A0\uFE0F Consider removing constant columns" else "\u2705 No constant columns detected",
+        if (memory_mb > 100) "\U0001F4BE Large dataset - consider data sampling for exploration" else NULL
       )
       
       paste(quality_lines[!is.null(quality_lines)], collapse = "\n")

@@ -168,7 +168,7 @@ mod_sidebar_server <- function(id, demo_data = FALSE) {
         Size = sapply(file_info, function(x) x$size),
         Type = tools::file_ext(files_data$names),
         Status = ifelse(sapply(file_info, function(x) x$readable), 
-                       "✓ Ready", "⚠ Issue"),
+                       "\u2713 Ready", "\u26A0 Issue"),
         Modified = sapply(file_info, function(x) {
           if (is.na(x$modified)) {
             "Unknown"
