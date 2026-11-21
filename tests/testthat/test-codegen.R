@@ -18,6 +18,15 @@ test_that("r_literal output always parses back to the original value", {
   }
 })
 
+test_that("r_literal preserves full numeric precision (no 7-digit rounding)", {
+  for (v in list(pi, exp(1), 0.1, 0.123456789012345, 1 / 3, 1e-8, c(pi, 1 / 7))) {
+    expect_identical(eval(parse(text = r_literal(v))), v)
+  }
+  # readable where it can be
+  expect_equal(r_literal(0.1), "0.1")
+  expect_equal(r_literal(42), "42")
+})
+
 test_that("backtick_if_needed only quotes non-syntactic names", {
   expect_equal(backtick_if_needed("USUBJID"), "USUBJID")
   expect_equal(backtick_if_needed("AGE"), "AGE")

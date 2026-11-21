@@ -28,11 +28,29 @@ r_literal <- function(v) {
     lit <- ifelse(is.na(v), "NA", ifelse(v, "TRUE", "FALSE"))
   } else {
     # numeric / integer
-    lit <- format(v, trim = TRUE, scientific = FALSE)
-    lit[is.na(v)] <- "NA"
+    lit <- vapply(v, num_literal, character(1))
   }
 
   if (length(lit) == 1) lit else paste0("c(", paste(lit, collapse = ", "), ")")
+}
+
+#' Shortest decimal literal that round-trips a numeric value exactly
+#'
+#' \code{format()}'s default of 7 significant digits silently rounds values such
+#' as pi, so generated code would filter on a different number than the app. This
+#' finds the fewest significant digits (15-17) whose text parses back to exactly
+#' the same double, keeping output readable while reproducible.
+#'
+#' @param x A length-1 numeric value.
+#' @return A single string of R source code.
+#' @keywords internal
+num_literal <- function(x) {
+  if (is.na(x)) return("NA")
+  for (d in 15:17) {
+    s <- format(x, digits = d, scientific = FALSE, trim = TRUE)
+    if (isTRUE(as.numeric(s) == x)) return(s)
+  }
+  format(x, digits = 17, scientific = FALSE, trim = TRUE)
 }
 
 #' Backtick a column name only when it is not a syntactic R name

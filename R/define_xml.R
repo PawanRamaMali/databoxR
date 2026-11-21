@@ -60,22 +60,31 @@ define_var_metadata <- function(mc, dataset = NULL) {
   vs <- as.data.frame(mc$var_spec, stringsAsFactors = FALSE)
   val <- as.data.frame(mc$value_spec, stringsAsFactors = FALSE)
 
-  # Strip any "DATASET.VARIABLE" scoping so joins line up on the bare name.
-  dv$variable <- sub("^.*\\.", "", dv$variable)
-  vs$variable <- sub("^.*\\.", "", vs$variable)
+  out <- dv
+  out$variable <- sub("^.*\\.", "", dv$variable)
 
-  out <- merge(dv, vs, by = "variable", all.x = TRUE, sort = FALSE)
-
-  # One value-spec row per dataset+variable (origin + codelist id).
-  if (all(c("dataset", "variable") %in% names(val)) && nrow(val) > 0) {
-    val$variable <- sub("^.*\\.", "", val$variable)
-    val_small <- val[!duplicated(val[c("dataset", "variable")]),
-                     intersect(c("dataset", "variable", "origin", "code_id"), names(val)),
-                     drop = FALSE]
-    out <- merge(out, val_small, by = c("dataset", "variable"), all.x = TRUE, sort = FALSE)
+  # Resolve each dataset+variable to one var_spec row via a 1-to-1 match (never
+  # a join), preferring a dataset-scoped "DATASET.VARIABLE" spec over a bare
+  # "VARIABLE" spec. This keeps the right label/type when a variable is defined
+  # differently across datasets, and cannot duplicate rows.
+  scoped_key <- paste(out$dataset, out$variable, sep = ".")
+  idx <- match(scoped_key, vs$variable)
+  bare <- match(out$variable, vs$variable)
+  idx[is.na(idx)] <- bare[is.na(idx)]
+  for (col in intersect(c("type", "length", "label", "format"), names(vs))) {
+    out[[col]] <- vs[[col]][idx]
   }
 
-  names(out)[names(out) == "code_id"] <- "codelist"
+  # Value-level origin + codelist, matched 1-to-1 on dataset + bare variable.
+  if (all(c("dataset", "variable") %in% names(val)) && nrow(val) > 0) {
+    val$variable <- sub("^.*\\.", "", val$variable)
+    val <- val[!duplicated(val[c("dataset", "variable")]), , drop = FALSE]
+    vmatch <- match(paste(out$dataset, out$variable, sep = "."),
+                    paste(val$dataset, val$variable, sep = "."))
+    if ("origin" %in% names(val))  out$origin   <- val$origin[vmatch]
+    if ("code_id" %in% names(val)) out$codelist <- val$code_id[vmatch]
+  }
+
   if ("order" %in% names(out)) out <- out[order(out$dataset, out$order), , drop = FALSE]
 
   keep <- intersect(
@@ -180,7 +189,9 @@ check_conformance <- function(data, mc, dataset) {
 
   # 1. Variable presence
   for (v in setdiff(meta$variable, data_vars)) {
-    mand <- isTRUE(meta$mandatory[meta$variable == v][1])
+    m <- meta$mandatory[meta$variable == v][1]
+    mand <- isTRUE(m) ||
+      (is.character(m) && toupper(trimws(m)) %in% c("YES", "Y", "TRUE"))
     add("Missing variable", v,
         if (mand) "Error" else "Warning",
         if (mand) "Required by define but absent from data"

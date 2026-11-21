@@ -447,7 +447,9 @@ mod_metadata_server <- function(id, dataset) {
     # regardless of how Shiny names the temp file.
     define_mc <- reactive({
       req(input$define_file)
-      xml_path <- file.path(tempdir(), "databoxR_define.xml")
+      # Unique temp path per upload so concurrent sessions do not clobber
+      # each other's define.xml.
+      xml_path <- tempfile(fileext = ".xml")
       file.copy(input$define_file$datapath, xml_path, overwrite = TRUE)
       tryCatch(
         load_define(xml_path),
