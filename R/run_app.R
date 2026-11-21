@@ -102,11 +102,17 @@ run_databox <- function(demo_data = FALSE, ...) {
               div(class = "col-12",
                 hr(class = "my-4", style = "border-top: 2px solid #e9ecef;")
               ),
-              # EDA Section  
+              # EDA Section
               div(class = "col-12",
                 div(id = "eda-card", mod_eda_ui("eda"))
               )
             )
+          )
+        ),
+        bs4Dash::tabItem(
+          tabName = "subject",
+          div(class = "container-fluid px-4 py-3",
+            mod_subject_ui("subject")
           )
         )
       )
@@ -128,6 +134,9 @@ run_databox <- function(demo_data = FALSE, ...) {
     # Pass dataset to other modules
     mod_metadata_server("metadata", dataset)
     mod_eda_server("eda", dataset)
+
+    # Cross-domain subject drill-down works across every loaded domain
+    mod_subject_server("subject", sidebar_data$all_datasets)
     
     # Auto-navigate to explorer when data is loaded
     observeEvent(dataset(), {

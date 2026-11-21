@@ -17,6 +17,11 @@ mod_sidebar_ui <- function(id) {
       tabName = "analysis",
       icon = shiny::icon("chart-bar")
     ),
+    bs4Dash::menuItem(
+      text = "Subject Profile",
+      tabName = "subject",
+      icon = shiny::icon("user-md")
+    ),
     br(),
     div(style = "padding: 10px;",
       fileInput(
@@ -193,6 +198,36 @@ mod_sidebar_server <- function(id, demo_data = FALSE) {
     outputOptions(output, "files_uploaded", suspendWhenHidden = FALSE)
     
     
+    # Named list of every loaded domain, for cross-domain features. Demo mode
+    # already holds parsed data frames; uploads are read and keyed by domain.
+    all_datasets <- reactive({
+      if (!is.null(files_data$is_demo) && files_data$is_demo) {
+        return(files_data$demo_datasets)
+      }
+      paths <- files_data$paths
+      fnames <- files_data$names
+      if (is.null(paths) || !length(paths)) return(NULL)
+      out <- list()
+      for (i in seq_along(paths)) {
+        p <- paths[i]
+        if (!file.exists(p)) next
+        d <- tryCatch(
+          read_sdtm_adam(p, validate_data = FALSE),
+          error = function(e) NULL
+        )
+        if (is.null(d)) next
+        key <- domain_key(d, if (length(fnames) >= i) fnames[i] else basename(p))
+        base_key <- key
+        k <- 2L
+        while (key %in% names(out)) {
+          key <- paste0(base_key, "_", k)
+          k <- k + 1L
+        }
+        out[[key]] <- as.data.frame(d)
+      }
+      if (!length(out)) NULL else out
+    })
+
     # Return both filepath and demo datasets
     return(list(
       filepath = reactive({
@@ -246,7 +281,8 @@ mod_sidebar_server <- function(id, demo_data = FALSE) {
           return(NULL)
         }
       }),
-      demo_datasets = reactive(files_data$demo_datasets)
+      demo_datasets = reactive(files_data$demo_datasets),
+      all_datasets = all_datasets
     ))
   })
 }
