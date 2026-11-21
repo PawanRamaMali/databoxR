@@ -178,7 +178,11 @@ mod_metadata_ui <- function(id) {
             h6(class = "text-info mt-4",
                icon("magic", class = "fa-fw me-1"),
                "Smart hints: define vs loaded data"),
-            DT::dataTableOutput(ns("define_hints"))
+            DT::dataTableOutput(ns("define_hints")),
+            h6(class = "text-info mt-4",
+               icon("clipboard-check", class = "fa-fw me-1"),
+               "Conformance checks"),
+            DT::dataTableOutput(ns("define_conformance"))
           )
         )
       )
@@ -478,5 +482,21 @@ mod_metadata_server <- function(id, dataset) {
       req(define_mc(), input$define_dataset, dataset())
       compare_define_to_data(dataset(), define_mc(), input$define_dataset)
     }, options = list(pageLength = 10, scrollX = TRUE))
+
+    output$define_conformance <- DT::renderDataTable({
+      req(define_mc(), input$define_dataset, dataset())
+      res <- check_conformance(dataset(), define_mc(), input$define_dataset)
+      DT::datatable(res, options = list(pageLength = 10, scrollX = TRUE),
+                    rownames = FALSE) |>
+        DT::formatStyle(
+          "Severity",
+          target = "cell",
+          color = DT::styleEqual(
+            c("Error", "Warning", "Info", "Success"),
+            c("#dc3545", "#fd7e14", "#6c757d", "#198754")
+          ),
+          fontWeight = "bold"
+        )
+    })
   })
 }

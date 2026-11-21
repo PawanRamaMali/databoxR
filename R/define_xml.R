@@ -148,3 +148,97 @@ compare_define_to_data <- function(data, mc, dataset) {
   rownames(res) <- NULL
   res
 }
+
+#' Metadata-driven conformance checks against a define
+#'
+#' Produces a tidy, severity-ranked set of findings comparing a loaded dataset
+#' to its define metadata:
+#' \itemize{
+#'   \item missing variables (Error if the define marks them mandatory,
+#'         otherwise Warning) and unexpected variables not in the define (Info);
+#'   \item variable label mismatches (Warning); and
+#'   \item values that fall outside the define's controlled terminology (Error),
+#'         via \code{metatools::get_bad_ct()}.
+#' }
+#'
+#' @param data A loaded data.frame.
+#' @param mc A \code{Metacore} object.
+#' @param dataset The dataset name in the define to check against.
+#' @return A data.frame with columns Check, Variable, Severity, Details.
+#' @export
+check_conformance <- function(data, mc, dataset) {
+  findings <- list()
+  add <- function(check, variable, severity, details) {
+    findings[[length(findings) + 1L]] <<- data.frame(
+      Check = check, Variable = variable, Severity = severity,
+      Details = details, stringsAsFactors = FALSE
+    )
+  }
+
+  meta <- define_var_metadata(mc, dataset)
+  data_vars <- names(data)
+
+  # 1. Variable presence
+  for (v in setdiff(meta$variable, data_vars)) {
+    mand <- isTRUE(meta$mandatory[meta$variable == v][1])
+    add("Missing variable", v,
+        if (mand) "Error" else "Warning",
+        if (mand) "Required by define but absent from data"
+        else "Expected by define but absent from data")
+  }
+  for (v in setdiff(data_vars, meta$variable)) {
+    add("Unexpected variable", v, "Info", "Present in data but not in define")
+  }
+
+  # 2. Label mismatches
+  cmp <- compare_define_to_data(data, mc, dataset)
+  mism <- cmp[!is.na(cmp$label_match) & !cmp$label_match, , drop = FALSE]
+  for (i in seq_len(nrow(mism))) {
+    add("Label mismatch", mism$variable[i], "Warning",
+        sprintf("define: '%s' | data: '%s'",
+                mism$expected_label[i], mism$actual_label[i]))
+  }
+
+  # 3. Controlled terminology (via metatools)
+  if (requireNamespace("metatools", quietly = TRUE) &&
+      requireNamespace("metacore", quietly = TRUE)) {
+    ds_meta <- tryCatch(
+      suppressWarnings(suppressMessages(metacore::select_dataset(mc, dataset))),
+      error = function(e) NULL
+    )
+    if (!is.null(ds_meta)) {
+      ct_vars <- intersect(meta$variable[!is.na(meta$codelist)], data_vars)
+      for (v in ct_vars) {
+        # get_bad_ct() uses non-standard evaluation on `var`; pass the value via
+        # do.call so a loop variable resolves to the column name, not "v".
+        bad <- tryCatch(
+          suppressWarnings(suppressMessages(
+            do.call(metatools::get_bad_ct, list(data, ds_meta, v))
+          )),
+          error = function(e) character(0)
+        )
+        bad <- unique(bad[!is.na(bad)])
+        if (length(bad) > 0) {
+          shown <- paste(utils::head(bad, 5), collapse = ", ")
+          if (length(bad) > 5) shown <- paste0(shown, ", ...")
+          add("Value not in controlled terminology", v, "Error",
+              paste0("Unexpected values: ", shown))
+        }
+      }
+    }
+  }
+
+  if (length(findings) == 0) {
+    return(data.frame(
+      Check = "All checks passed", Variable = NA_character_,
+      Severity = "Success", Details = "No conformance issues detected",
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  out <- do.call(rbind, findings)
+  sev_rank <- c(Error = 1, Warning = 2, Info = 3, Success = 4)
+  out <- out[order(sev_rank[out$Severity], out$Variable), , drop = FALSE]
+  rownames(out) <- NULL
+  out
+}

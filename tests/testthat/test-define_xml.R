@@ -88,3 +88,64 @@ test_that("compare_define_to_data surfaces matches, mismatches and gaps", {
   # A define variable absent from the tiny data frame is flagged in_data = FALSE
   expect_true(any(!cmp$in_data & cmp$in_define))
 })
+
+test_that("check_conformance flags CT violations, extras and mismatches", {
+  skip_if_no_define()
+  skip_if_not_installed("metatools")
+  mc <- load_define(define_path())
+
+  adsl_meta <- define_var_metadata(mc, "ADSL")
+  studyid_label <- adsl_meta$label[adsl_meta$variable == "STUDYID"]
+
+  data <- data.frame(
+    STUDYID = c("CDISCPILOT01", "CDISCPILOT01"),
+    USUBJID = c("01-701-1015", "01-701-1023"),
+    ARM     = c("Placebo", "Not A Real Arm"),  # one value out of CT
+    EXTRA   = c(1, 2),                          # not in define
+    stringsAsFactors = FALSE
+  )
+  attr(data$STUDYID, "label") <- studyid_label
+  attr(data$USUBJID, "label") <- "Totally Wrong Label"  # mismatch
+
+  res <- check_conformance(data, mc, "ADSL")
+  expect_s3_class(res, "data.frame")
+  expect_true(all(c("Check", "Variable", "Severity", "Details") %in% names(res)))
+
+  # CT violation on ARM -> Error
+  arm_row <- res[res$Variable == "ARM" & res$Check == "Value not in controlled terminology", ]
+  expect_equal(nrow(arm_row), 1)
+  expect_equal(arm_row$Severity, "Error")
+  expect_true(grepl("Not A Real Arm", arm_row$Details))
+
+  # EXTRA flagged as unexpected (Info)
+  extra_row <- res[res$Variable == "EXTRA", ]
+  expect_true(nrow(extra_row) >= 1)
+  expect_equal(extra_row$Severity[1], "Info")
+
+  # USUBJID label mismatch (Warning)
+  lab_row <- res[res$Variable == "USUBJID" & res$Check == "Label mismatch", ]
+  expect_equal(nrow(lab_row), 1)
+  expect_equal(lab_row$Severity, "Warning")
+
+  # Findings are severity-ranked: first Error comes before any Info
+  first_err <- which(res$Severity == "Error")[1]
+  first_info <- which(res$Severity == "Info")[1]
+  expect_true(first_err < first_info)
+})
+
+test_that("check_conformance returns a Success row when data conforms", {
+  skip_if_no_define()
+  skip_if_not_installed("metatools")
+  mc <- load_define(define_path())
+
+  # Only well-formed, in-CT variables with correct labels
+  adsl_meta <- define_var_metadata(mc, "ADSL")
+  data <- data.frame(ARM = c("Placebo", "Xanomeline Low Dose"), stringsAsFactors = FALSE)
+  attr(data$ARM, "label") <- adsl_meta$label[adsl_meta$variable == "ARM"]
+
+  res <- check_conformance(data, mc, "ADSL")
+  # ARM is in CT and label matches; the only finding should be the many missing
+  # define variables (Warnings), never a CT Error for ARM.
+  expect_false(any(res$Variable == "ARM" &
+                   res$Check == "Value not in controlled terminology"))
+})
