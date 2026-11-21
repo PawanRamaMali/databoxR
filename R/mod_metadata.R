@@ -72,9 +72,9 @@ mod_metadata_ui <- function(id) {
                 selectInput(ns("dict_type"), 
                            label = NULL,
                            choices = c(
-                             "📊 Summary Statistics" = "summary", 
-                             "📈 Frequency Analysis" = "frequency",
-                             "🔍 Missing Data Profile" = "missing"
+                             "\U0001F4CA Summary Statistics" = "summary", 
+                             "\U0001F4C8 Frequency Analysis" = "frequency",
+                             "\U0001F50D Missing Data Profile" = "missing"
                            ),
                            width = "100%")
               )
