@@ -114,6 +114,12 @@ run_databox <- function(demo_data = FALSE, ...) {
           div(class = "container-fluid px-4 py-3",
             mod_subject_ui("subject")
           )
+        ),
+        bs4Dash::tabItem(
+          tabName = "ask",
+          div(class = "container-fluid px-4 py-3",
+            mod_ask_ui("ask")
+          )
         )
       )
     ),
@@ -137,6 +143,9 @@ run_databox <- function(demo_data = FALSE, ...) {
 
     # Cross-domain subject drill-down works across every loaded domain
     mod_subject_server("subject", sidebar_data$all_datasets)
+
+    # Natural-language query over every loaded domain
+    mod_ask_server("ask", sidebar_data$all_datasets)
     
     # Auto-navigate to explorer when data is loaded
     observeEvent(dataset(), {
