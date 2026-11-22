@@ -213,6 +213,17 @@ MIT License - see LICENSE file for details
 - [`subject_profile_code()`](https://pawanramamali.github.io/databoxR/reference/subject_profile_code.md)
   : Reproducible R code that extracts one subject across domains
 
+## Subject narrative
+
+- [`subject_narrative()`](https://pawanramamali.github.io/databoxR/reference/subject_narrative.md)
+  : Generate a grounded narrative for one subject
+- [`subject_narrative_facts()`](https://pawanramamali.github.io/databoxR/reference/subject_narrative_facts.md)
+  : Grounded facts for one subject
+- [`subject_narrative_facts_text()`](https://pawanramamali.github.io/databoxR/reference/subject_narrative_facts_text.md)
+  : Render subject facts as compact text
+- [`subject_narrative_claude()`](https://pawanramamali.github.io/databoxR/reference/subject_narrative_claude.md)
+  : Narrate one subject's facts with Claude via ellmer
+
 ## Natural-language query
 
 - [`nl_query()`](https://pawanramamali.github.io/databoxR/reference/nl_query.md)
