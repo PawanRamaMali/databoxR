@@ -22,6 +22,11 @@ mod_sidebar_ui <- function(id) {
       tabName = "subject",
       icon = shiny::icon("user-md")
     ),
+    bs4Dash::menuItem(
+      text = "Ask",
+      tabName = "ask",
+      icon = shiny::icon("wand-magic-sparkles")
+    ),
     br(),
     div(style = "padding: 10px;",
       fileInput(
