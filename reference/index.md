@@ -37,6 +37,21 @@
 - [`subject_profile_code()`](https://pawanramamali.github.io/databoxR/reference/subject_profile_code.md)
   : Reproducible R code that extracts one subject across domains
 
+## Natural-language query
+
+- [`nl_query()`](https://pawanramamali.github.io/databoxR/reference/nl_query.md)
+  : Answer a natural-language question against loaded datasets
+- [`nlq_schema()`](https://pawanramamali.github.io/databoxR/reference/nlq_schema.md)
+  : Describe loaded datasets for a query planner
+- [`nlq_validate_plan()`](https://pawanramamali.github.io/databoxR/reference/nlq_validate_plan.md)
+  : Validate a query plan against the loaded data
+- [`nlq_execute_plan()`](https://pawanramamali.github.io/databoxR/reference/nlq_execute_plan.md)
+  : Execute a query plan deterministically
+- [`nlq_plan_code()`](https://pawanramamali.github.io/databoxR/reference/nlq_plan_code.md)
+  : Generate reproducible R code for a query plan
+- [`nlq_propose_claude()`](https://pawanramamali.github.io/databoxR/reference/nlq_propose_claude.md)
+  : Propose a query plan with Claude via ellmer
+
 ## define.xml and conformance
 
 - [`load_define()`](https://pawanramamali.github.io/databoxR/reference/load_define.md)

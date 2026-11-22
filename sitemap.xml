@@ -16,6 +16,12 @@
 <url><loc>https://pawanramamali.github.io/databoxR/reference/index.html</loc></url>
 <url><loc>https://pawanramamali.github.io/databoxR/reference/list_subjects.html</loc></url>
 <url><loc>https://pawanramamali.github.io/databoxR/reference/load_define.html</loc></url>
+<url><loc>https://pawanramamali.github.io/databoxR/reference/nl_query.html</loc></url>
+<url><loc>https://pawanramamali.github.io/databoxR/reference/nlq_execute_plan.html</loc></url>
+<url><loc>https://pawanramamali.github.io/databoxR/reference/nlq_plan_code.html</loc></url>
+<url><loc>https://pawanramamali.github.io/databoxR/reference/nlq_propose_claude.html</loc></url>
+<url><loc>https://pawanramamali.github.io/databoxR/reference/nlq_schema.html</loc></url>
+<url><loc>https://pawanramamali.github.io/databoxR/reference/nlq_validate_plan.html</loc></url>
 <url><loc>https://pawanramamali.github.io/databoxR/reference/read_sdtm_adam.html</loc></url>
 <url><loc>https://pawanramamali.github.io/databoxR/reference/read_with_cache.html</loc></url>
 <url><loc>https://pawanramamali.github.io/databoxR/reference/run_databox.html</loc></url>
