@@ -24,6 +24,12 @@ reference:
   - subject_timeline
   - subject_kpis
   - subject_profile_code
+- title: Subject narrative
+  contents:
+  - subject_narrative
+  - subject_narrative_facts
+  - subject_narrative_facts_text
+  - subject_narrative_claude
 - title: Natural-language query
   contents:
   - nl_query
