@@ -28,6 +28,18 @@ mod_subject_ui <- function(id) {
       uiOutput(ns("kpi_cards")),
       fluidRow(
         bs4Dash::box(
+          title = "AI summary", status = "info", solidHeader = TRUE,
+          width = 12, collapsible = TRUE,
+          uiOutput(ns("narr_availability")),
+          div(class = "mb-2",
+            actionButton(ns("gen_narrative"), "Generate summary",
+                         icon = icon("wand-magic-sparkles"),
+                         class = "btn-primary btn-sm")),
+          uiOutput(ns("narrative_out"))
+        )
+      ),
+      fluidRow(
+        bs4Dash::box(
           title = "Demographics", status = "primary", solidHeader = TRUE,
           width = 4, collapsible = FALSE,
           uiOutput(ns("demographics"))
@@ -75,9 +87,18 @@ mod_subject_ui <- function(id) {
   )
 }
 
-mod_subject_server <- function(id, datasets) {
+mod_subject_server <- function(id, datasets, narrate = NULL) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
+
+    # A narrator is available via a user-supplied `narrate` (e.g. tests) or the
+    # ellmer package plus an API key. Without one the summary box explains how to
+    # enable it and the rest of the profile is unaffected.
+    have_llm <- function() {
+      !is.null(narrate) ||
+        (requireNamespace("ellmer", quietly = TRUE) &&
+           nzchar(Sys.getenv("ANTHROPIC_API_KEY")))
+    }
 
     subjects <- reactive({
       ds <- datasets()
@@ -114,6 +135,54 @@ mod_subject_server <- function(id, datasets) {
       req(datasets())
       req(input$subject)
       input$subject
+    })
+
+    # On-demand grounded narrative. The facts are computed in R; the model only
+    # phrases them, and the facts are shown alongside so every claim is checkable.
+    narr <- reactiveVal(NULL)
+    observeEvent(current(), narr(NULL), ignoreInit = TRUE)
+
+    output$narr_availability <- renderUI({
+      if (have_llm()) return(NULL)
+      div(class = "alert alert-warning mb-2", role = "alert",
+          icon("triangle-exclamation"),
+          " The AI summary needs the ", tags$code("ellmer"), " package and an ",
+          tags$code("ANTHROPIC_API_KEY"), " environment variable. The rest of ",
+          "the subject profile works without them.")
+    })
+
+    observeEvent(input$gen_narrative, {
+      ds <- datasets()
+      sid <- current()
+      if (!have_llm()) {
+        narr(list(error = "No model available (see the notice above)."))
+        return()
+      }
+      args <- list(datasets = ds, subject_id = sid)
+      if (!is.null(narrate)) args$narrate <- narrate
+      res <- shiny::withProgress(message = "Summarising...", value = 0.5, {
+        do.call(subject_narrative, args)
+      })
+      narr(res)
+    })
+
+    output$narrative_out <- renderUI({
+      a <- narr()
+      if (is.null(a)) return(NULL)
+      if (!is.null(a$error)) {
+        return(div(class = "alert alert-danger mb-0", role = "alert",
+                   icon("circle-exclamation"), " ", a$error))
+      }
+      tagList(
+        div(class = "p-1", a$narrative),
+        div(class = "text-muted small mt-2",
+            icon("circle-info"),
+            " AI-generated from the facts below. Verify against the data; this ",
+            "is not medical advice."),
+        tags$details(class = "mt-2",
+          tags$summary(style = "cursor:pointer;", "Facts the summary used"),
+          tags$pre(class = "small mb-0", a$facts_text))
+      )
     })
 
     # KPI value boxes: demographics highlights on top, event counts below.
