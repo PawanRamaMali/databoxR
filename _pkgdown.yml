@@ -1,0 +1,37 @@
+url: https://pawanramamali.github.io/databoxR/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Launch the app
+  contents:
+  - run_databox
+- title: Reading and caching data
+  contents:
+  - read_sdtm_adam
+  - read_with_cache
+  - get_file_preview
+  - safe_select_columns
+  - validate_dataset
+  - DataCache
+- title: Subject profile
+  contents:
+  - list_subjects
+  - subject_records
+  - subject_overview
+  - subject_demographics
+  - subject_timeline
+  - subject_kpis
+  - subject_profile_code
+- title: define.xml and conformance
+  contents:
+  - load_define
+  - define_datasets
+  - define_var_metadata
+  - compare_define_to_data
+  - check_conformance
+- title: Demo data
+  contents:
+  - generate_demo_data
+  - get_demo_dataset
