@@ -24,6 +24,14 @@ reference:
   - subject_timeline
   - subject_kpis
   - subject_profile_code
+- title: Natural-language query
+  contents:
+  - nl_query
+  - nlq_schema
+  - nlq_validate_plan
+  - nlq_execute_plan
+  - nlq_plan_code
+  - nlq_propose_claude
 - title: define.xml and conformance
   contents:
   - load_define

@@ -42,5 +42,6 @@ Suggests:
     rmarkdown,
     DataExplorer,
     metacore,
-    metatools
+    metatools,
+    ellmer
 Config/roxygen2/version: 8.1.1
