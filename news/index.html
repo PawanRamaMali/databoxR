@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">databoxR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,36 @@
       <small>Source: <a href="https://github.com/PawanRamaMali/databoxR/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="databoxr-020">databoxR 0.2.0<a class="anchor" aria-label="anchor" href="#databoxr-020"></a></h2>
+<div class="section level3">
+<h3 id="cross-domain-profiles-and-grounded-ai-mag_right-0-2-0">Cross-domain profiles and grounded AI 🔎<a class="anchor" aria-label="anchor" href="#cross-domain-profiles-and-grounded-ai-mag_right-0-2-0"></a></h3>
+<div class="section level4">
+<h4 id="new-features-0-2-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h4>
+<ul><li>
+<strong>Subject Profile tab</strong>: Follow one subject (USUBJID) across every loaded domain, with KPI cards, a demographics panel, an interactive cross-domain timeline (with CDISC study day), colour-coded adverse events, and a CSV and R-script export.</li>
+<li>
+<strong>Ask tab</strong>: Ask a question in plain English. Claude proposes a structured query plan, databoxR validates every field against the loaded data and runs the query itself, and the tab shows the plan it ran and the reproducible R code. Real rows only, never generated data.</li>
+<li>
+<strong>Per-subject AI summary</strong>: In the Subject Profile tab, databoxR computes a subject’s facts and hands only those facts to Claude for a short plain-language summary. The facts are shown next to the summary so every statement is checkable. It describes the data and is not medical advice.</li>
+<li>
+<strong>Grounding model</strong>: Both AI features follow one rule. R does the data work and the model only phrases it, so the worst case is wording, never fabricated records.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="optional-ai-setup-0-2-0">Optional AI setup<a class="anchor" aria-label="anchor" href="#optional-ai-setup-0-2-0"></a></h4>
+<ul><li>The Ask and AI summary features use the <code>ellmer</code> package and an <code>ANTHROPIC_API_KEY</code>. Without them the panels show a short notice and the rest of databoxR is unaffected. See the README for setup.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="infrastructure-0-2-0">Infrastructure<a class="anchor" aria-label="anchor" href="#infrastructure-0-2-0"></a></h4>
+<ul><li>
+<strong>Continuous integration</strong>: R-CMD-check across macOS, Windows, and Ubuntu (release, devel, oldrel-1), plus a status badge.</li>
+<li>
+<strong>pkgdown site</strong>: Published reference documentation at <a href="https://pawanramamali.github.io/databoxR/" class="uri">https://pawanramamali.github.io/databoxR/</a>.</li>
+<li>
+<strong>Packaging</strong>: Documented every exported function, added an <code>Authors@R</code> field and an MIT <code>LICENSE</code>, and cleaned up imports so the package passes <code>R CMD check</code>.</li>
+</ul></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="databoxr-011">databoxR 0.1.1<a class="anchor" aria-label="anchor" href="#databoxr-011"></a></h2>
 <div class="section level3">
