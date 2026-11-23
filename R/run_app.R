@@ -120,6 +120,12 @@ run_databox <- function(demo_data = FALSE, ...) {
           div(class = "container-fluid px-4 py-3",
             mod_ask_ui("ask")
           )
+        ),
+        bs4Dash::tabItem(
+          tabName = "conformance",
+          div(class = "container-fluid px-4 py-3",
+            mod_conformance_ui("conformance")
+          )
         )
       )
     ),
@@ -146,6 +152,9 @@ run_databox <- function(demo_data = FALSE, ...) {
 
     # Natural-language query over every loaded domain
     mod_ask_server("ask", sidebar_data$all_datasets)
+
+    # define.xml comparison and conformance checks
+    mod_conformance_server("conformance", sidebar_data$all_datasets)
     
     # Auto-navigate to explorer when data is loaded
     observeEvent(dataset(), {
