@@ -1,6 +1,6 @@
 Package: databoxR
 Type: Package
-Title: A Smart Explorer for SDTM and ADaM Clinical Trial Datasets
+Title: Smart Explorer for SDTM and ADaM Clinical Trial Datasets
 Version: 0.2.0
 Authors@R:
     person(c("Pawan", "Rama"), "Mali", email = "prm@outlook.in",
@@ -13,7 +13,6 @@ License: MIT + file LICENSE
 URL: https://github.com/PawanRamaMali/databoxR, https://pawanramamali.github.io/databoxR/
 BugReports: https://github.com/PawanRamaMali/databoxR/issues
 Encoding: UTF-8
-LazyData: true
 Depends: R (>= 4.1.0)
 Imports:
     shiny,
