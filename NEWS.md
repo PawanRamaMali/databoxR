@@ -1,3 +1,21 @@
+# databoxR 0.2.0
+
+## Cross-domain profiles and grounded AI 🔎
+
+### New Features
+* **Subject Profile tab**: Follow one subject (USUBJID) across every loaded domain, with KPI cards, a demographics panel, an interactive cross-domain timeline (with CDISC study day), colour-coded adverse events, and a CSV and R-script export.
+* **Ask tab**: Ask a question in plain English. Claude proposes a structured query plan, databoxR validates every field against the loaded data and runs the query itself, and the tab shows the plan it ran and the reproducible R code. Real rows only, never generated data.
+* **Per-subject AI summary**: In the Subject Profile tab, databoxR computes a subject's facts and hands only those facts to Claude for a short plain-language summary. The facts are shown next to the summary so every statement is checkable. It describes the data and is not medical advice.
+* **Grounding model**: Both AI features follow one rule. R does the data work and the model only phrases it, so the worst case is wording, never fabricated records.
+
+### Optional AI setup
+* The Ask and AI summary features use the `ellmer` package and an `ANTHROPIC_API_KEY`. Without them the panels show a short notice and the rest of databoxR is unaffected. See the README for setup.
+
+### Infrastructure
+* **Continuous integration**: R-CMD-check across macOS, Windows, and Ubuntu (release, devel, oldrel-1), plus a status badge.
+* **pkgdown site**: Published reference documentation at <https://pawanramamali.github.io/databoxR/>.
+* **Packaging**: Documented every exported function, added an `Authors@R` field and an MIT `LICENSE`, and cleaned up imports so the package passes `R CMD check`.
+
 # databoxR 0.1.1
 
 ## Enhanced UI and Visualization Update 🎨

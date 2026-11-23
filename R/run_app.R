@@ -125,7 +125,7 @@ run_databox <- function(demo_data = FALSE, ...) {
     ),
     controlbar = NULL,
     footer = bs4Dash::dashboardFooter(
-      left = "databoxR v0.1.0",
+      left = "databoxR v0.2.0",
       right = "Clinical Data Explorer"
     )
   )
