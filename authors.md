@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/PawanRamaMali/databoxR/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/PawanRamaMali/databoxR/blob/v0.2.0/DESCRIPTION)
 
 Mali PR (2026). *databoxR: A Smart Explorer for SDTM and ADaM Clinical
 Trial Datasets*. R package version 0.2.0,
