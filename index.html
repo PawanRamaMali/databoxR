@@ -61,6 +61,7 @@
 <li>🧾 <strong>Metadata Explorer</strong>: Variable labels, data dictionary, and CDISC compliance checks</li>
 <li>📊 <strong>Exploratory Data Analysis</strong>: Distributions, correlations, missing data patterns</li>
 <li>🧑‍⚕️ <strong>Subject Profile</strong>: Follow one subject (USUBJID) across every loaded domain with a cross-domain timeline, KPI cards, and highlighted adverse events</li>
+<li>🤖 <strong>Ask and AI Summaries</strong>: Query your data in plain English and generate a grounded per-subject summary. Optional, uses Claude via the <code>ellmer</code> package. See <a href="#id_-enabling-the-ai-features">Enabling the AI features</a>.</li>
 <li>📈 <strong>Interactive Visualizations</strong>: Histograms, boxplots, density plots, correlation matrices</li>
 <li>🔍 <strong>Data Quality Assessment</strong>: Missing data analysis, duplicate detection, constant variables</li>
 <li>📤 <strong>Export Functionality</strong>: Download filtered datasets and analysis results</li>
@@ -168,6 +169,30 @@
 <li>
 <strong>Reproducible export</strong>: Download the timeline as CSV and a ready-to-run R script</li>
 </ul>
+</div>
+<div class="section level3">
+<h3 id="ask-and-ai-summaries">Ask and AI summaries<a class="anchor" aria-label="anchor" href="#ask-and-ai-summaries"></a>
+</h3>
+<p>Two optional features use a language model to make the data easier to work with. Both are built so the model never invents data:</p>
+<ul>
+<li>
+<strong>Ask</strong>: type a question in plain English. Claude proposes a structured query plan (domain, filters, columns). databoxR validates every field against your loaded data and runs the query itself, so the answer is always real rows. The tab shows the plan it ran and the reproducible R code.</li>
+<li>
+<strong>AI summary</strong> (Subject Profile tab): databoxR computes a subject’s facts (demographics, event counts, the adverse-event list, the timeline span) and hands only those facts to Claude, which writes a short plain-language summary. The facts are shown next to the summary so every statement is checkable. It is a description of the data, not medical advice.</li>
+</ul>
+<p>In both cases R does the data work and the model only phrases it, so the worst case is wording, never fabricated records.</p>
+</div>
+<div class="section level3">
+<h3 id="key-enabling-the-ai-features">🔑 Enabling the AI features<a class="anchor" aria-label="anchor" href="#key-enabling-the-ai-features"></a>
+</h3>
+<p>The AI features need the <code>ellmer</code> package and an Anthropic API key. The rest of databoxR works without them.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"ellmer"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>ANTHROPIC_API_KEY <span class="op">=</span> <span class="st">"sk-ant-..."</span><span class="op">)</span>  <span class="co"># or set it in ~/.Renviron</span></span>
+<span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/PawanRamaMali/databoxR" class="external-link">databoxR</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/run_databox.html">run_databox</a></span><span class="op">(</span>demo_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>Set the key in <code>~/.Renviron</code> (as <code>ANTHROPIC_API_KEY=sk-ant-...</code>) to make it persist across sessions, then restart R. Without the package or the key, the Ask and AI summary panels show a short notice explaining how to turn them on.</p>
 <hr>
 </div>
 </div>
@@ -192,14 +217,14 @@
 <div class="section level3">
 <h3 id="running-tests">Running Tests<a class="anchor" aria-label="anchor" href="#running-tests"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">test</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="building-documentation">Building Documentation<a class="anchor" aria-label="anchor" href="#building-documentation"></a>
 </h3>
 <p>The <code>NAMESPACE</code> is maintained by hand (the source has no <code>@importFrom</code> tags), so regenerate only the help pages and leave <code>NAMESPACE</code> untouched:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Generates man/*.Rd only; does not rewrite NAMESPACE</span></span>
 <span><span class="fu">roxygen2</span><span class="fu">::</span><span class="fu">roxygenise</span><span class="op">(</span>roclets <span class="op">=</span> <span class="st">"rd"</span><span class="op">)</span></span></code></pre></div>
 <hr>

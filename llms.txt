@@ -20,6 +20,10 @@ who want to explore datasets, metadata, and content interactively.
 - 🧑‍⚕️ **Subject Profile**: Follow one subject (USUBJID) across every
   loaded domain with a cross-domain timeline, KPI cards, and highlighted
   adverse events
+- 🤖 **Ask and AI Summaries**: Query your data in plain English and
+  generate a grounded per-subject summary. Optional, uses Claude via the
+  `ellmer` package. See [Enabling the AI
+  features](#id_-enabling-the-ai-features).
 - 📈 **Interactive Visualizations**: Histograms, boxplots, density
   plots, correlation matrices
 - 🔍 **Data Quality Assessment**: Missing data analysis, duplicate
@@ -109,6 +113,45 @@ run_databox(demo_data = TRUE)
 - **Adverse events**: Severity colour coding and serious-flag emphasis
 - **Reproducible export**: Download the timeline as CSV and a
   ready-to-run R script
+
+### Ask and AI summaries
+
+Two optional features use a language model to make the data easier to
+work with. Both are built so the model never invents data:
+
+- **Ask**: type a question in plain English. Claude proposes a
+  structured query plan (domain, filters, columns). databoxR validates
+  every field against your loaded data and runs the query itself, so the
+  answer is always real rows. The tab shows the plan it ran and the
+  reproducible R code.
+- **AI summary** (Subject Profile tab): databoxR computes a subject’s
+  facts (demographics, event counts, the adverse-event list, the
+  timeline span) and hands only those facts to Claude, which writes a
+  short plain-language summary. The facts are shown next to the summary
+  so every statement is checkable. It is a description of the data, not
+  medical advice.
+
+In both cases R does the data work and the model only phrases it, so the
+worst case is wording, never fabricated records.
+
+### 🔑 Enabling the AI features
+
+The AI features need the `ellmer` package and an Anthropic API key. The
+rest of databoxR works without them.
+
+``` r
+
+install.packages("ellmer")
+Sys.setenv(ANTHROPIC_API_KEY = "sk-ant-...")  # or set it in ~/.Renviron
+
+library(databoxR)
+run_databox(demo_data = TRUE)
+```
+
+Set the key in `~/.Renviron` (as `ANTHROPIC_API_KEY=sk-ant-...`) to make
+it persist across sessions, then restart R. Without the package or the
+key, the Ask and AI summary panels show a short notice explaining how to
+turn them on.
 
 ------------------------------------------------------------------------
 
